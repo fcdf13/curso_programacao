@@ -10,6 +10,12 @@ dados/*.duckdb.wal
 # comente a linha abaixo — o repo funciona dos dois jeitos.
 respostas/
 
+# Interface web: dependências e build são artefatos
+app/node_modules/
+app/dist/
+app/test-results/
+app/playwright-report/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -17,3 +23,4 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+app/*.tsbuildinfo

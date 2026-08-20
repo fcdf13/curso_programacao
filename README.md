@@ -6,9 +6,11 @@ resolveu voltam a aparecer pouco antes de você esquecê-los.
 
 Não existe servidor, conta ou mensalidade. É este repositório, o seu editor e o terminal.
 
+Ele tem duas caras, e as duas usam o mesmo motor de correção:
+
 ```
-curso hoje        →  o plano do dia
-curso proximo     →  abre o próximo exercício
+curso web         →  a interface no navegador (editor, tabelas, painel)
+curso hoje        →  o plano do dia, no terminal
 curso check       →  corrige em segundos, com o erro explicado
 ```
 
@@ -19,8 +21,12 @@ curso check       →  corrige em segundos, com o erro explicado
 ```bash
 pip install -e .     # instala o comando `curso` e as dependências
 curso setup          # gera o dataset da Loja Aurora (~15s, roda uma vez só)
-curso hoje           # o que fazer hoje
+
+cd app && npm install && npm run build && cd ..   # compila a interface (uma vez)
+curso web            # abre no navegador
 ```
+
+Se preferir ficar só no terminal, pule o passo do `npm` e vá direto para `curso hoje`.
 
 O `curso setup` cria os CSVs e o banco DuckDB a partir de `dados/gerar.py`, sempre com a
 mesma semente — o dataset é idêntico em qualquer máquina, o que permite os testes
@@ -28,7 +34,25 @@ compararem resultados exatos.
 
 Requisitos: Python 3.11+. Testado com pandas 3.0 e DuckDB 1.5.
 
-## O ciclo
+## A interface
+
+```bash
+curso web            # serve a interface e a API em http://127.0.0.1:8765
+curso web --dev      # só a API; o front roda em `cd app && npm run dev`
+```
+
+Três áreas na tela de resolver: enunciado e teoria à esquerda, editor no centro,
+resultado embaixo. `Ctrl+Enter` corrige, o que você digita é salvo sozinho, e quando a
+resposta é uma tabela o erro aparece como **esperado × obtido lado a lado**, com as
+células divergentes destacadas — que é onde a tela ganha do terminal.
+
+O servidor escuta só em `127.0.0.1`: nada fica exposto na rede.
+
+O editor mostra **apenas o código**. O enunciado e o bloco `META` (que guarda as dicas,
+sendo a última quase a resposta) ficam no servidor e são recolocados na hora de salvar —
+o arquivo em `respostas/` continua sendo um exercício completo, que o CLI lê igual.
+
+## O ciclo no terminal
 
 ```bash
 curso proximo             # mostra o enunciado e cria o arquivo para você editar
@@ -58,7 +82,8 @@ Três árvores paralelas guardam o mesmo exercício em papéis diferentes:
 Mais:
 
 ```
-curso/        o motor: CLI, correção, progresso, revisão espaçada
+curso/        o motor: CLI, API, correção, progresso, revisão espaçada
+app/          a interface web (React + TypeScript + Vite)
 dados/        o gerador do dataset (determinístico) e os arquivos gerados
 autoria/      a fonte de autoria dos exercícios (veja abaixo)
 testes_do_motor/  testes do próprio motor
@@ -152,9 +177,9 @@ gabarito, todos com o mesmo estilo de teste.
 ## Qualidade
 
 ```bash
-pytest --solucoes      # todo exercício passa no próprio teste com o gabarito oficial
-pytest testes_do_motor # o motor: SRS, catálogo, comparação, correção
-pytest                 # tudo (os exercícios reprovam até você resolvê-los — é o esperado)
+pytest --solucoes         # todo exercício passa no próprio teste com o gabarito oficial
+pytest testes_do_motor    # o motor: SRS, catálogo, comparação, correção, API
+npm --prefix app run e2e  # o navegador de verdade contra o servidor de verdade
 ```
 
 O `pytest --solucoes` é o portão que impede um enunciado impossível ou ambíguo de entrar no
@@ -162,3 +187,6 @@ repositório. Nenhum exercício é adicionado sem esse verde.
 
 O verso disso também é verificado: com os esqueletos em branco, **os 92 exercícios reprovam**.
 Um teste que passa sem código escrito não testa nada.
+
+O `e2e` sobe o Chromium contra o `curso web` real — sem mock: ele resolve exercícios,
+confere que as tabelas de erro aparecem e que o painel passa a contar.

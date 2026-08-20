@@ -32,6 +32,7 @@ class Resultado:
     primeira_falha: str          # mensagem didática, pronta para exibir
     nome_da_falha: str           # qual teste falhou
     bruto: str                   # saída completa do pytest, para depuração
+    dados: dict | None = None    # a mesma falha estruturada, para a interface web
 
 
 def corrigir(exercicio: Exercicio, fonte: str | None = None) -> Resultado:
@@ -70,6 +71,7 @@ def corrigir(exercicio: Exercicio, fonte: str | None = None) -> Resultado:
             ),
             nome_da_falha="tempo esgotado",
             bruto="",
+            dados={"tipo": "tempo_esgotado", "limite_s": TEMPO_LIMITE_S},
         )
 
     dados = {}
@@ -94,6 +96,7 @@ def corrigir(exercicio: Exercicio, fonte: str | None = None) -> Resultado:
         primeira_falha=_extrair_mensagem(primeira["detalhe"]) if primeira else "",
         nome_da_falha=primeira["nome"] if primeira else "",
         bruto=saida,
+        dados=primeira.get("dados") if primeira else None,
     )
 
 

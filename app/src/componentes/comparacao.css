@@ -1,0 +1,164 @@
+.comparacao {
+  margin-top: 0.9rem;
+}
+
+.aviso-ordem {
+  margin: 0 0 0.7rem;
+  font-size: 0.82rem;
+  color: var(--texto-fraco);
+}
+
+.quadros {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+
+/* Em tela estreita as tabelas empilham em vez de espremer as colunas. */
+@media (max-width: 900px) {
+  .quadros {
+    grid-template-columns: 1fr;
+  }
+}
+
+.quadro {
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  overflow: hidden;
+  background: var(--fundo-painel);
+  min-width: 0;
+}
+.quadro.esperado {
+  border-color: color-mix(in srgb, var(--certo) 35%, var(--borda));
+}
+.quadro.obtido {
+  border-color: color-mix(in srgb, var(--errado) 35%, var(--borda));
+}
+
+.quadro-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.4rem 0.7rem;
+  border-bottom: 1px solid var(--borda);
+  background: var(--fundo-fundo);
+}
+.quadro-titulo {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.quadro.esperado .quadro-titulo {
+  color: var(--certo);
+}
+.quadro.obtido .quadro-titulo {
+  color: var(--errado);
+}
+.quadro-contagem {
+  font-size: 0.75rem;
+  color: var(--texto-fraco);
+  font-family: var(--fonte-mono);
+}
+
+/* A rolagem fica dentro do quadro: a página nunca rola de lado. */
+.quadro-rolagem {
+  overflow: auto;
+  max-height: 320px;
+}
+
+.quadro table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--fonte-mono);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.quadro th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--fundo-painel);
+  border-bottom: 1px solid var(--borda-forte);
+  text-align: left;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem;
+}
+
+.quadro td {
+  padding: 0.28rem 0.6rem;
+  border-bottom: 1px solid var(--borda);
+}
+.quadro tr:last-child td {
+  border-bottom: none;
+}
+
+.quadro td.numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.quadro td.booleano {
+  color: var(--acento);
+}
+.quadro td.nulo {
+  color: var(--texto-fraco);
+  font-style: italic;
+}
+
+.quadro th.indice,
+.quadro td.indice {
+  color: var(--texto-fraco);
+  text-align: right;
+  background: var(--fundo-fundo);
+  position: sticky;
+  left: 0;
+  border-right: 1px solid var(--borda);
+}
+.quadro th.indice {
+  z-index: 2;
+}
+
+.quadro td.divergente {
+  background: var(--errado-fundo);
+  color: var(--errado);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.quadro td.vazia {
+  text-align: center;
+  color: var(--texto-fraco);
+  font-style: italic;
+  padding: 1.2rem;
+}
+
+.quadro-rodape {
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+  color: var(--texto-fraco);
+  border-top: 1px solid var(--borda);
+  background: var(--fundo-fundo);
+}
+
+.lista-de-celulas {
+  margin: 0.85rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+.lista-de-celulas li {
+  margin-bottom: 0.25rem;
+}
+.lista-de-celulas code {
+  background: var(--fundo-codigo);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+}
+.lista-de-celulas code.ok {
+  color: var(--certo);
+}
+.lista-de-celulas code.nao {
+  color: var(--errado);
+}

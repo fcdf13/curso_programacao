@@ -1,5 +1,6 @@
 """Linha de comando do curso.
 
+    curso web         abre a interface no navegador
     curso setup       prepara o dataset (rode uma vez)
     curso hoje        o plano do dia: revisões vencidas + material novo
     curso proximo     abre o próximo exercício
@@ -78,6 +79,13 @@ def comando_setup(args) -> int:
     from dados import gerar
 
     gerar.construir(forcar=args.forcar)
+    return 0
+
+
+def comando_web(args) -> int:
+    from curso import servidor
+
+    servidor.subir(porta=args.porta, dev=args.dev, abrir=not args.sem_navegador)
     return 0
 
 
@@ -256,6 +264,14 @@ def construir_parser() -> argparse.ArgumentParser:
     p_setup = sub.add_parser("setup", help="gera o dataset e o banco (rode uma vez)")
     p_setup.add_argument("--forcar", action="store_true", help="regenera mesmo se já existir")
     p_setup.set_defaults(funcao=comando_setup)
+
+    p_web = sub.add_parser("web", help="abre a interface no navegador")
+    p_web.add_argument("-p", "--porta", type=int, default=8765)
+    p_web.add_argument("--dev", action="store_true",
+                       help="só a API; o front roda em `npm run dev`")
+    p_web.add_argument("--sem-navegador", action="store_true",
+                       help="não abre o navegador sozinho")
+    p_web.set_defaults(funcao=comando_web)
 
     p_hoje = sub.add_parser("hoje", help="o plano do dia")
     p_hoje.add_argument("-n", "--quantidade", type=int, default=5,

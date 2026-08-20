@@ -8,7 +8,8 @@ Duas coisas acontecem aqui:
 
 2. Quando a variável CURSO_RELATORIO aponta para um arquivo, o resultado de cada
    teste é gravado ali em JSON — é assim que `curso check` mostra uma falha
-   legível em vez do traceback cru do pytest.
+   legível em vez do traceback cru do pytest, e como a interface web recebe a
+   falha em forma estruturada para desenhar tabelas.
 """
 
 from __future__ import annotations
@@ -36,6 +37,21 @@ def pytest_configure(config):
         os.environ["CURSO_FONTE"] = "solucoes"
 
 
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Pesca o payload estruturado da ErroDidatico antes que ela vire texto.
+
+    `pytest_runtest_logreport` recebe só o relatório, nunca a exceção — por isso o
+    payload precisa ser anexado aqui, onde `call.excinfo` ainda existe.
+    """
+    relatorio = yield
+    if call.excinfo is not None:
+        dados = getattr(call.excinfo.value, "dados", None)
+        if dados:
+            relatorio.curso_dados = dados
+    return relatorio
+
+
 def pytest_runtest_logreport(report):
     if report.when == "call" or (report.when in ("setup", "teardown") and report.failed):
         _resultados.append({
@@ -44,6 +60,7 @@ def pytest_runtest_logreport(report):
             "resultado": report.outcome,
             "duracao": round(report.duration, 3),
             "detalhe": report.longreprtext if report.failed else "",
+            "dados": getattr(report, "curso_dados", None),
         })
 
 

@@ -1,0 +1,126 @@
+/* Paleta e medidas do app.
+ *
+ * O tema claro é a definição base; o escuro só redefine os tokens. Nenhuma cor
+ * é declarada exclusivamente dentro de um bloco de tema — assim nada fica sem
+ * valor se a preferência do sistema mudar.
+ *
+ * As cores de estado (verde/vermelho/amarelo/magenta) são as mesmas do CLI,
+ * de propósito: quem alterna entre terminal e app lê os dois do mesmo jeito.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --fundo: #fbfbfa;
+  --fundo-painel: #ffffff;
+  --fundo-fundo: #f2f2ef;
+  --fundo-codigo: #f7f7f5;
+  --borda: #e2e2dd;
+  --borda-forte: #cfcfc7;
+
+  --texto: #1c1c1a;
+  --texto-suave: #62625c;
+  --texto-fraco: #8c8c84;
+
+  --acento: #0b6b73;
+  --acento-fundo: #e2f1f2;
+
+  --certo: #17703b;
+  --certo-fundo: #e4f3e8;
+  --errado: #a3232a;
+  --errado-fundo: #fbe8e8;
+  --atencao: #8a5a00;
+  --atencao-fundo: #fbf1dc;
+  --gabarito: #6f3382;
+  --gabarito-fundo: #f4e9f7;
+
+  --nivel-1: #17703b;
+  --nivel-3: #8a5a00;
+  --nivel-5: #a3232a;
+
+  /* Marca dos gráficos: uma série só, então o que rege é o contraste com a
+     superfície (validado >= 3:1 nos dois temas), não separação entre hues. */
+  --dado: #0e8a94;
+  --dado-trilho: #e8e8e3;
+
+  --raio: 10px;
+  --raio-pequeno: 6px;
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.04);
+
+  --fonte: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --fonte-mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo,
+    Consolas, "Liberation Mono", monospace;
+
+  --barra-lateral: 380px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --fundo: #16171a;
+    --fundo-painel: #1d1f23;
+    --fundo-fundo: #101114;
+    --fundo-codigo: #232529;
+    --borda: #2c2f35;
+    --borda-forte: #3d414a;
+
+    --texto: #e6e6e3;
+    --texto-suave: #a1a4ab;
+    --texto-fraco: #71757e;
+
+    --acento: #4fc3cb;
+    --acento-fundo: #16333a;
+
+    --certo: #62d18a;
+    --certo-fundo: #14301f;
+    --errado: #f08a8a;
+    --errado-fundo: #351a1c;
+    --atencao: #e6bb63;
+    --atencao-fundo: #322612;
+    --gabarito: #c99ad8;
+    --gabarito-fundo: #2b1e33;
+
+    --nivel-1: #62d18a;
+    --nivel-3: #e6bb63;
+    --nivel-5: #f08a8a;
+
+    --dado: #3fb3bd;
+    --dado-trilho: #2a2d33;
+
+    --sombra: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
+  }
+}
+
+:root[data-tema="escuro"] {
+  --fundo: #16171a;
+  --fundo-painel: #1d1f23;
+  --fundo-fundo: #101114;
+  --fundo-codigo: #232529;
+  --borda: #2c2f35;
+  --borda-forte: #3d414a;
+
+  --texto: #e6e6e3;
+  --texto-suave: #a1a4ab;
+  --texto-fraco: #71757e;
+
+  --acento: #4fc3cb;
+  --acento-fundo: #16333a;
+
+  --certo: #62d18a;
+  --certo-fundo: #14301f;
+  --errado: #f08a8a;
+  --errado-fundo: #351a1c;
+  --atencao: #e6bb63;
+  --atencao-fundo: #322612;
+  --gabarito: #c99ad8;
+  --gabarito-fundo: #2b1e33;
+
+  --nivel-1: #62d18a;
+  --nivel-3: #e6bb63;
+  --nivel-5: #f08a8a;
+
+  --dado: #3fb3bd;
+  --dado-trilho: #2a2d33;
+
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
+}

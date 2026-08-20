@@ -1,0 +1,210 @@
+.resolver {
+  display: grid;
+  grid-template-columns: var(--barra-lateral) 1fr;
+  height: 100%;
+  min-height: 0;
+}
+
+@media (max-width: 1000px) {
+  .resolver {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+/* ------------------------------------------------------------- esquerda -- */
+
+.coluna-esquerda {
+  border-right: 1px solid var(--borda);
+  background: var(--fundo-painel);
+  overflow-y: auto;
+  padding: 1.5rem 1.4rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cabecalho-do-exercicio h1 {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 1.3rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.identificacao {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.identificacao .id {
+  color: var(--acento);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.nivel {
+  letter-spacing: 0.1em;
+  font-size: 0.8rem;
+}
+.nivel .vazias {
+  color: var(--borda-forte);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.aviso-revisao {
+  margin: 0.7rem 0 0;
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--raio-pequeno);
+  background: var(--atencao-fundo);
+  color: var(--atencao);
+  font-size: 0.85rem;
+}
+
+.abas {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--borda);
+}
+.abas button {
+  border: none;
+  background: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--texto-suave);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.88rem;
+}
+.abas button:hover:not(:disabled) {
+  color: var(--texto);
+}
+.abas button.ativa {
+  color: var(--acento);
+  border-bottom-color: var(--acento);
+  font-weight: 600;
+}
+
+.painel-de-leitura {
+  font-size: 0.92rem;
+}
+
+/* ---------------------------------------------------------------- dicas -- */
+
+.dicas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borda);
+}
+
+.dica {
+  background: var(--atencao-fundo);
+  border-left: 3px solid var(--atencao);
+  border-radius: var(--raio-pequeno);
+  padding: 0.55rem 0.8rem;
+}
+.dica-numero {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 700;
+  color: var(--atencao);
+}
+.dica p {
+  margin: 0.2rem 0 0;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+}
+
+.pedir-dica {
+  align-self: flex-start;
+}
+
+/* -------------------------------------------------------------- direita -- */
+
+.coluna-direita {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.barra-do-editor {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.55rem 1.1rem;
+  border-bottom: 1px solid var(--borda);
+  background: var(--fundo-painel);
+  flex: 0 0 auto;
+}
+.barra-do-editor .espaco {
+  margin-left: auto;
+}
+
+.estado-do-salvamento {
+  font-size: 0.75rem;
+  color: var(--texto-fraco);
+}
+.estado-do-salvamento.pendente {
+  color: var(--atencao);
+}
+
+kbd {
+  font-family: var(--fonte-mono);
+  font-size: 0.7rem;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 0 0.3rem;
+  margin-left: 0.5rem;
+  opacity: 0.7;
+}
+
+.editor {
+  flex: 1 1 340px;
+  min-height: 320px;
+  overflow: auto;
+  border-bottom: 1px solid var(--borda);
+}
+.editor .cm-editor {
+  height: 100%;
+}
+.editor .cm-scroller {
+  font-family: var(--fonte-mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.area-de-resultado {
+  flex: 0 0 auto;
+  padding: 0 1.1rem 3rem;
+}
+
+.depois-de-acertar {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.gabarito {
+  margin-top: 1.5rem;
+}
+.gabarito pre {
+  margin: 0;
+  background: var(--gabarito-fundo);
+  border: 1px solid color-mix(in srgb, var(--gabarito) 35%, transparent);
+  border-radius: var(--raio-pequeno);
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  font-family: var(--fonte-mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}

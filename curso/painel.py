@@ -163,7 +163,9 @@ def mostrar_plano(novos: list[Exercicio], revisoes: list[tuple[Exercicio, prog.F
 def _barra(feitos: int, total: int, largura: int = 24) -> str:
     if total == 0:
         return "[dim]" + "░" * largura + "[/]"
-    cheios = round(largura * feitos / total)
+    # Com pelo menos um resolvido, mostra ao menos um bloco: arredondar para
+    # zero faria a barra parecer vazia depois do primeiro acerto.
+    cheios = max(1, round(largura * feitos / total)) if feitos else 0
     cor = "green" if feitos == total else "cyan"
     return f"[{cor}]{'█' * cheios}[/][dim]{'░' * (largura - cheios)}[/]"
 

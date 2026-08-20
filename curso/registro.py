@@ -19,6 +19,8 @@ from curso import caminhos
 RE_META_SQL = re.compile(r"/\*\s*META\s*\n(.*?)\n\s*\*/", re.DOTALL)
 RE_ENUNCIADO_SQL = re.compile(r"/\*\s*ENUNCIADO\s*\n(.*?)\n\s*\*/", re.DOTALL)
 RE_ID = re.compile(r"^([A-D])(\d{2})-(\d{3})$")
+# Os dois blocos de comentário que abrem todo exercício de SQL: META e ENUNCIADO.
+RE_CABECALHO_SQL = re.compile(r"\A\s*(?:/\*.*?\*/\s*)+", re.DOTALL)
 
 NOMES_DOS_BLOCOS = {
     "A": "Python",
@@ -75,11 +77,18 @@ class Exercicio:
         """A resposta já foi criada (você já começou a mexer)?"""
         return self.caminho_resposta.exists()
 
-    def codigo_da_solucao(self) -> str:
-        """O gabarito sem o enunciado nem o META — só o que interessa ver."""
-        texto = self.caminho_solucao.read_text(encoding="utf-8")
+    def separar(self, texto: str) -> tuple[str, str]:
+        """Divide um arquivo de exercício em (cabeçalho, corpo).
+
+        O cabeçalho é o enunciado mais o META — que **não** devem aparecer no
+        editor do aluno: o META guarda as três dicas, e a última costuma ser a
+        resposta. O corpo é o código de fato, do primeiro import ou `def` em
+        diante.
+        """
         if self.linguagem == "sql":
-            return re.sub(r"/\*.*?\*/", "", texto, flags=re.DOTALL).strip()
+            corpo = RE_CABECALHO_SQL.sub("", texto, count=1)
+            corte = len(texto) - len(corpo)
+            return texto[:corte], corpo.lstrip("\n")
 
         arvore = ast.parse(texto)
         for no in arvore.body:
@@ -93,8 +102,36 @@ class Exercicio:
             )
             if e_docstring or e_meta:
                 continue
-            return "\n".join(texto.splitlines()[no.lineno - 1:]).strip()
-        return texto.strip()
+            linhas = texto.splitlines(keepends=True)
+            primeira = min(
+                [no.lineno, *[d.lineno for d in getattr(no, "decorator_list", [])]]
+            )
+            return "".join(linhas[: primeira - 1]), "".join(linhas[primeira - 1:])
+        return texto, ""
+
+    def cabecalho(self) -> str:
+        """O cabeçalho canônico, sempre vindo do enunciado original.
+
+        Reconstituir o arquivo com este cabeçalho — e não com o que estava na
+        resposta do aluno — impede que um META editado sem querer quebre o
+        catálogo ou apague as dicas.
+        """
+        return self.separar(self.caminho.read_text(encoding="utf-8"))[0]
+
+    def corpo_atual(self) -> str:
+        """Só o código que o aluno escreve — o que vai para o editor."""
+        origem = self.caminho_resposta if self.caminho_resposta.exists() else self.caminho
+        return self.separar(origem.read_text(encoding="utf-8"))[1]
+
+    def montar(self, corpo: str) -> str:
+        """Junta o cabeçalho canônico ao corpo, do jeito que o arquivo deve ficar."""
+        return self.cabecalho() + corpo.lstrip("\n")
+
+    def codigo_da_solucao(self) -> str:
+        """O gabarito sem o enunciado nem o META — só o que interessa ver."""
+        return self.separar(
+            self.caminho_solucao.read_text(encoding="utf-8")
+        )[1].strip()
 
 
 class ErroDeCatalogo(Exception):

@@ -1,0 +1,44 @@
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.numero-grande {
+  background: var(--fundo-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.numero-grande strong {
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.numero-grande span {
+  font-size: 0.82rem;
+  color: var(--texto-fraco);
+}
+
+.grade-de-graficos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: start;   /* os cartões seguem a altura do próprio conteúdo */
+}
+.grade-de-graficos.uma-coluna {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 900px) {
+  .grade-de-graficos {
+    grid-template-columns: 1fr;
+  }
+}

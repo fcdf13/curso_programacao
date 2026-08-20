@@ -1,0 +1,49 @@
+.topo-da-pagina {
+  margin-bottom: 1.4rem;
+}
+.topo-da-pagina h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+.topo-da-pagina p {
+  margin: 0.25rem 0 0;
+}
+
+.secao {
+  margin-bottom: 1.8rem;
+}
+
+.comecar {
+  margin-bottom: 1.6rem;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.95rem;
+}
+
+.explicacao {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--raio-pequeno);
+  background: var(--acento-fundo);
+  color: var(--texto-suave);
+  font-size: 0.87rem;
+}
+.explicacao code {
+  background: var(--fundo-painel);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+}
+
+.filtros {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.4rem;
+}
+.filtros input[type="search"] {
+  flex: 1 1 260px;
+}
+.botoes-de-bloco {
+  display: flex;
+  gap: 0.3rem;
+}

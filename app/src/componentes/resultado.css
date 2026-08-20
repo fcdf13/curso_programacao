@@ -1,0 +1,107 @@
+.resultado {
+  border: 1px solid;
+  border-radius: var(--raio);
+  padding: 0.9rem 1.1rem 1.1rem;
+  margin-top: 1rem;
+}
+.resultado.certo {
+  border-color: color-mix(in srgb, var(--certo) 45%, transparent);
+  background: var(--certo-fundo);
+}
+.resultado.errado {
+  border-color: color-mix(in srgb, var(--errado) 40%, transparent);
+  background: var(--fundo-painel);
+}
+
+.resultado-topo {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-bottom: 0.5rem;
+}
+
+.selo {
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+}
+.certo .selo {
+  background: var(--certo);
+  color: var(--fundo-painel);
+}
+.errado .selo {
+  background: var(--errado-fundo);
+  color: var(--errado);
+}
+
+.resultado-frase {
+  margin: 0 0 0.4rem;
+}
+.certo .resultado-frase {
+  color: var(--certo);
+}
+
+.linha-de-detalhe {
+  margin: 0.3rem 0;
+  font-size: 0.88rem;
+  color: var(--texto-suave);
+}
+.linha-de-detalhe code,
+.par dd {
+  font-family: var(--fonte-mono);
+  background: var(--fundo-codigo);
+  border-radius: 4px;
+  padding: 0.08em 0.4em;
+}
+code.ok,
+.par dd.ok {
+  color: var(--certo);
+}
+code.nao,
+.par dd.nao {
+  color: var(--errado);
+}
+
+.par {
+  display: flex;
+  gap: 2rem;
+  margin: 0.6rem 0 0;
+}
+.par > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.par dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--texto-fraco);
+  font-weight: 700;
+}
+.par dd {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.mensagem-crua {
+  margin: 0.2rem 0 0;
+  padding: 0.8rem 0.9rem;
+  background: var(--fundo-codigo);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--texto);
+}
+
+.resultado-acoes {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}

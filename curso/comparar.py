@@ -13,10 +13,25 @@ from typing import Any
 TOLERANCIA_PADRAO = 1e-9
 MAX_LINHAS_MOSTRADAS = 8
 MAX_CELULAS_RELATADAS = 3
+MAX_LINHAS_ESTRUTURADAS = 50
 
 
 class ErroDidatico(AssertionError):
-    """Falha de exercício com explicação em português."""
+    """Falha de exercício com explicação em português.
+
+    `mensagem` é o texto pronto para o terminal. `dados` é a mesma falha em forma
+    estruturada — é o que permite à interface web desenhar tabelas de verdade em vez
+    de despejar o texto do terminal dentro de um <pre>.
+    """
+
+    def __init__(self, mensagem: str, dados: dict | None = None):
+        super().__init__(mensagem)
+        self.dados = dados or {}
+
+
+def _erro(mensagem: str, **dados: Any) -> ErroDidatico:
+    """Levanta a falha carregando junto a versão estruturada dela."""
+    return ErroDidatico(mensagem, dados)
 
 
 # --------------------------------------------------------------------------- #
@@ -63,6 +78,47 @@ def _mostrar(v: Any) -> str:
 
 def _tipo(v: Any) -> str:
     return type(v).__name__
+
+
+# --------------------------------------------------------------------------- #
+# Serialização da falha (consumida pela API web)
+# --------------------------------------------------------------------------- #
+
+def _para_json(valor: Any) -> Any:
+    """Converte um valor de célula em algo que o json aceite."""
+    if _e_nulo(valor):
+        return None
+    if _e_booleano(valor):
+        return bool(valor)
+    if isinstance(valor, float):
+        return valor if math.isfinite(valor) else str(valor)
+    if isinstance(valor, (int, str)):
+        return valor
+    if hasattr(valor, "item"):          # numpy escalar
+        try:
+            return _para_json(valor.item())
+        except (ValueError, AttributeError):
+            pass
+    if hasattr(valor, "isoformat"):     # data, hora, Timestamp
+        return valor.isoformat()
+    return str(valor)
+
+
+def _tabela_json(df, limite: int = MAX_LINHAS_ESTRUTURADAS) -> dict:
+    """Um DataFrame em forma serializável, truncado mas informando o total real."""
+    recorte = df.head(limite)
+    return {
+        "colunas": [str(c) for c in df.columns],
+        "linhas": [
+            [_para_json(v) for v in linha]
+            for linha in recorte.itertuples(index=False, name=None)
+        ],
+        "total": int(len(df)),
+    }
+
+
+def _como_quadro(serie):
+    return serie.to_frame(name=serie.name if serie.name is not None else "valor")
 
 
 # --------------------------------------------------------------------------- #
@@ -130,16 +186,17 @@ def verificar(
             _verificar_escalar(obtido, esperado, tolerancia, nome)
     except ErroDidatico as erro:
         if dica:
-            raise ErroDidatico(f"{erro}\n\n  Dica: {dica}") from None
+            raise ErroDidatico(f"{erro}\n\n  Dica: {dica}", erro.dados) from None
         raise
 
 
 def _nada_devolvido(obtido: Any, nome: str) -> None:
-    raise ErroDidatico(
+    raise _erro(
         f"A função devolveu None — ou seja, nada.\n\n"
         f"  Isso quase sempre significa uma destas duas coisas:\n"
         f"    1. o corpo da função ainda está com `...` (você não escreveu a resposta);\n"
-        f"    2. você calculou o {nome}, mas esqueceu do `return`."
+        f"    2. você calculou o {nome}, mas esqueceu do `return`.",
+        tipo="sem_retorno",
     )
 
 
@@ -156,10 +213,15 @@ def _verificar_escalar(obtido, esperado, tolerancia, nome) -> None:
         )
         if isinstance(esperado, (int, float)) and isinstance(obtido, str):
             detalhe += "\n  Números lidos como texto precisam de int(...) ou float(...)."
-    raise ErroDidatico(
+    raise _erro(
         f"O {nome} não bate.\n\n"
         f"    esperado: {_mostrar(esperado)}\n"
-        f"    obtido:   {_mostrar(obtido)}{detalhe}"
+        f"    obtido:   {_mostrar(obtido)}{detalhe}",
+        tipo="valor_escalar",
+        esperado=_para_json(esperado),
+        obtido=_para_json(obtido),
+        tipo_esperado=_tipo(esperado),
+        tipo_obtido=_tipo(obtido),
     )
 
 
@@ -167,10 +229,13 @@ def _verificar_sequencia(obtido, esperado, ignorar_ordem, tolerancia, nome) -> N
     if obtido is None:
         _nada_devolvido(obtido, nome)
     if not isinstance(obtido, (list, tuple)):
-        raise ErroDidatico(
+        raise _erro(
             f"Esperava uma {type(esperado).__name__} e recebi {_tipo(obtido)}.\n\n"
             f"    esperado: {_mostrar(esperado)}\n"
-            f"    obtido:   {_mostrar(obtido)}"
+            f"    obtido:   {_mostrar(obtido)}",
+            tipo="tipo_errado",
+            tipo_esperado=type(esperado).__name__,
+            tipo_obtido=_tipo(obtido),
         )
 
     a, b = list(obtido), list(esperado)
@@ -181,22 +246,29 @@ def _verificar_sequencia(obtido, esperado, ignorar_ordem, tolerancia, nome) -> N
             pass
 
     if len(a) != len(b):
-        raise ErroDidatico(
+        raise _erro(
             f"O tamanho do {nome} não bate.\n\n"
             f"    esperado: {len(b)} itens -> {_mostrar(esperado)}\n"
-            f"    obtido:   {len(a)} itens -> {_mostrar(obtido)}"
+            f"    obtido:   {len(a)} itens -> {_mostrar(obtido)}",
+            tipo="tamanho_da_lista",
+            esperado=[_para_json(v) for v in esperado],
+            obtido=[_para_json(v) for v in obtido],
         )
 
     for i, (x, y) in enumerate(zip(a, b)):
         if not _iguais(x, y, tolerancia):
             posicao = f"na posição {i}" if not ignorar_ordem else f"no {i+1}º item (já ordenado)"
-            raise ErroDidatico(
+            raise _erro(
                 f"O {nome} tem o tamanho certo, mas difere {posicao}.\n\n"
                 f"    esperado[{i}]: {_mostrar(y)}\n"
                 f"    obtido[{i}]:   {_mostrar(x)}\n\n"
                 f"  completo:\n"
                 f"    esperado: {_mostrar(esperado)}\n"
-                f"    obtido:   {_mostrar(obtido)}"
+                f"    obtido:   {_mostrar(obtido)}",
+                tipo="item_da_lista",
+                posicao=i,
+                esperado=[_para_json(v) for v in esperado],
+                obtido=[_para_json(v) for v in obtido],
             )
 
 
@@ -206,8 +278,9 @@ def _verificar_conjunto(obtido, esperado, nome) -> None:
     try:
         a = set(obtido)
     except TypeError:
-        raise ErroDidatico(
-            f"Esperava um conjunto (set) e recebi {_tipo(obtido)}: {_mostrar(obtido)}"
+        raise _erro(
+            f"Esperava um conjunto (set) e recebi {_tipo(obtido)}: {_mostrar(obtido)}",
+            tipo="tipo_errado", tipo_esperado="set", tipo_obtido=_tipo(obtido),
         ) from None
     b = set(esperado)
     if a == b:
@@ -221,15 +294,21 @@ def _verificar_conjunto(obtido, esperado, nome) -> None:
         linhas.append(f"    itens a mais:     {sobrando}")
     linhas += ["", f"    esperado: {sorted(b, key=repr)}",
                f"    obtido:   {sorted(a, key=repr)}"]
-    raise ErroDidatico("\n".join(linhas))
+    raise _erro(
+        "\n".join(linhas),
+        tipo="conjunto",
+        faltando=[_para_json(v) for v in faltando],
+        sobrando=[_para_json(v) for v in sobrando],
+    )
 
 
 def _verificar_dicionario(obtido, esperado, tolerancia, nome) -> None:
     if obtido is None:
         _nada_devolvido(obtido, nome)
     if not isinstance(obtido, dict):
-        raise ErroDidatico(
-            f"Esperava um dicionário e recebi {_tipo(obtido)}: {_mostrar(obtido)}"
+        raise _erro(
+            f"Esperava um dicionário e recebi {_tipo(obtido)}: {_mostrar(obtido)}",
+            tipo="tipo_errado", tipo_esperado="dict", tipo_obtido=_tipo(obtido),
         )
 
     faltando = sorted(set(esperado) - set(obtido), key=repr)
@@ -240,15 +319,24 @@ def _verificar_dicionario(obtido, esperado, tolerancia, nome) -> None:
             partes.append(f"    chaves que faltam:  {faltando}")
         if sobrando:
             partes.append(f"    chaves a mais:      {sobrando}")
-        raise ErroDidatico("\n".join(partes))
+        raise _erro(
+            "\n".join(partes),
+            tipo="chaves_do_dicionario",
+            faltando=[_para_json(c) for c in faltando],
+            sobrando=[_para_json(c) for c in sobrando],
+        )
 
     for chave in esperado:
         if not _iguais(obtido[chave], esperado[chave], tolerancia):
-            raise ErroDidatico(
+            raise _erro(
                 f"As chaves do {nome} estão certas, mas um valor difere.\n\n"
                 f"    na chave {chave!r}:\n"
                 f"      esperado: {_mostrar(esperado[chave])}\n"
-                f"      obtido:   {_mostrar(obtido[chave])}"
+                f"      obtido:   {_mostrar(obtido[chave])}",
+                tipo="valor_do_dicionario",
+                chave=_para_json(chave),
+                esperado=_para_json(esperado[chave]),
+                obtido=_para_json(obtido[chave]),
             )
 
 
@@ -274,15 +362,21 @@ def _verificar_df(obtido, esperado, ignorar_ordem, ignorar_indice,
         _nada_devolvido(obtido, nome)
 
     if isinstance(obtido, pd.Series):
-        raise ErroDidatico(
+        raise _erro(
             f"Esperava um DataFrame e recebi uma Series.\n\n"
             f"  Uma Series é uma coluna só. Selecionar com colchetes duplos —\n"
             f"  df[['coluna']] em vez de df['coluna'] — devolve um DataFrame.\n\n"
-            + _tabela_texto(esperado, "esperado")
+            + _tabela_texto(esperado, "esperado"),
+            tipo="esperava_dataframe",
+            esperado=_tabela_json(esperado),
+            obtido=_tabela_json(_como_quadro(obtido)),
         )
     if not isinstance(obtido, pd.DataFrame):
-        raise ErroDidatico(
-            f"Esperava um DataFrame e recebi {_tipo(obtido)}: {_mostrar(obtido)}"
+        raise _erro(
+            f"Esperava um DataFrame e recebi {_tipo(obtido)}: {_mostrar(obtido)}",
+            tipo="esperava_dataframe",
+            esperado=_tabela_json(esperado),
+            tipo_obtido=_tipo(obtido),
         )
 
     # 1. Colunas
@@ -296,14 +390,24 @@ def _verificar_df(obtido, esperado, ignorar_ordem, ignorar_indice,
             partes.append(f"    colunas a mais:     {sobrando}")
         partes += ["", f"    esperado: {list(esperado.columns)}",
                    f"    obtido:   {list(obtido.columns)}"]
-        raise ErroDidatico("\n".join(partes))
+        raise _erro(
+            "\n".join(partes),
+            tipo="colunas_diferentes",
+            faltando=[str(c) for c in faltando],
+            sobrando=[str(c) for c in sobrando],
+            esperado=_tabela_json(esperado),
+            obtido=_tabela_json(obtido),
+        )
 
     if list(obtido.columns) != list(esperado.columns):
-        raise ErroDidatico(
+        raise _erro(
             "As colunas certas estão lá, mas fora de ordem.\n\n"
             f"    esperado: {list(esperado.columns)}\n"
             f"    obtido:   {list(obtido.columns)}\n\n"
-            "  Reordene selecionando com uma lista: df[['a', 'b', 'c']]"
+            "  Reordene selecionando com uma lista: df[['a', 'b', 'c']]",
+            tipo="ordem_das_colunas",
+            esperado=_tabela_json(esperado),
+            obtido=_tabela_json(obtido),
         )
 
     esp = _preparar(esperado, ignorar_ordem, ignorar_indice)
@@ -319,19 +423,25 @@ def _verificar_df(obtido, esperado, ignorar_ordem, ignorar_indice,
                  if diferenca < 0 else
                  "\n\n  Filtro frouxo demais, ou uma junção que multiplicou linhas —\n"
                  "  confira se a chave do outro lado tem duplicatas.")
-        raise ErroDidatico(
+        raise _erro(
             f"O número de linhas não bate. {veredito}\n\n"
-            + _lado_a_lado(obtido, esperado) + pista
+            + _lado_a_lado(obtido, esperado) + pista,
+            tipo="numero_de_linhas",
+            esperado=_tabela_json(esp),
+            obtido=_tabela_json(obt),
         )
 
     # 3. Índice (quando importa)
     if not ignorar_indice and not obt.index.equals(esp.index):
-        raise ErroDidatico(
+        raise _erro(
             "As linhas batem, mas o índice não.\n\n"
             f"    esperado: {list(esp.index)[:10]}\n"
             f"    obtido:   {list(obt.index)[:10]}\n\n"
             "  Depois de filtrar, o índice guarda os números originais.\n"
-            "  Use .reset_index(drop=True) para renumerar de 0 em diante."
+            "  Use .reset_index(drop=True) para renumerar de 0 em diante.",
+            tipo="indice_diferente",
+            indice_esperado=[_para_json(v) for v in list(esp.index)[:20]],
+            indice_obtido=[_para_json(v) for v in list(obt.index)[:20]],
         )
 
     # 4. Valores
@@ -353,21 +463,34 @@ def _verificar_df(obtido, esperado, ignorar_ordem, ignorar_indice,
             for i, coluna, valor_esp, valor_obt in problemas
         ]
         ordenado = " (comparado sem levar a ordem em conta)" if ignorar_ordem else ""
-        raise ErroDidatico(
+        raise _erro(
             f"A forma da tabela está certa, mas há valores diferentes{ordenado}.\n\n"
             "    primeiras diferenças:\n" + "\n".join(linhas) + "\n\n"
-            + _lado_a_lado(obtido, esperado)
+            + _lado_a_lado(obtido, esperado),
+            tipo="valores_diferentes",
+            esperado=_tabela_json(esp),
+            obtido=_tabela_json(obt),
+            celulas=[
+                {"linha": int(i), "coluna": str(coluna),
+                 "esperado": _para_json(valor_esp), "obtido": _para_json(valor_obt)}
+                for i, coluna, valor_esp, valor_obt in problemas
+            ],
+            comparado_sem_ordem=bool(ignorar_ordem),
         )
 
     # 5. Tipos das colunas (só se o exercício exigir)
     if checar_tipo_coluna:
         for coluna in esp.columns:
             if str(obt[coluna].dtype) != str(esp[coluna].dtype):
-                raise ErroDidatico(
+                raise _erro(
                     f"Os valores estão certos, mas o tipo da coluna {coluna!r} não.\n\n"
                     f"    esperado: {esp[coluna].dtype}\n"
                     f"    obtido:   {obt[coluna].dtype}\n\n"
-                    "  Converta com .astype(...) ou pd.to_numeric / pd.to_datetime."
+                    "  Converta com .astype(...) ou pd.to_numeric / pd.to_datetime.",
+                    tipo="tipo_da_coluna",
+                    coluna=str(coluna),
+                    tipo_esperado=str(esp[coluna].dtype),
+                    tipo_obtido=str(obt[coluna].dtype),
                 )
 
 
@@ -380,18 +503,27 @@ def _verificar_series(obtido, esperado, ignorar_ordem, ignorar_indice,
 
     if isinstance(obtido, pd.DataFrame):
         if obtido.shape[1] == 1:
-            raise ErroDidatico(
+            raise _erro(
                 "Esperava uma Series e recebi um DataFrame de uma coluna só.\n\n"
                 "  df[['coluna']] devolve DataFrame; df['coluna'] devolve Series.\n"
-                "  Aqui o exercício pede a Series — use colchetes simples."
+                "  Aqui o exercício pede a Series — use colchetes simples.",
+                tipo="esperava_series",
+                esperado=_tabela_json(_como_quadro(esperado)),
+                obtido=_tabela_json(obtido),
             )
-        raise ErroDidatico(
+        raise _erro(
             f"Esperava uma Series (uma coluna) e recebi um DataFrame "
-            f"com {obtido.shape[1]} colunas."
+            f"com {obtido.shape[1]} colunas.",
+            tipo="esperava_series",
+            esperado=_tabela_json(_como_quadro(esperado)),
+            obtido=_tabela_json(obtido),
         )
     if not isinstance(obtido, pd.Series):
-        raise ErroDidatico(
-            f"Esperava uma Series e recebi {_tipo(obtido)}: {_mostrar(obtido)}"
+        raise _erro(
+            f"Esperava uma Series e recebi {_tipo(obtido)}: {_mostrar(obtido)}",
+            tipo="esperava_series",
+            esperado=_tabela_json(_como_quadro(esperado)),
+            tipo_obtido=_tipo(obtido),
         )
 
     esp = esperado.sort_values(kind="stable") if ignorar_ordem else esperado
@@ -400,33 +532,51 @@ def _verificar_series(obtido, esperado, ignorar_ordem, ignorar_indice,
         esp, obt = esp.reset_index(drop=True), obt.reset_index(drop=True)
 
     if len(obt) != len(esp):
-        raise ErroDidatico(
+        raise _erro(
             f"O tamanho da Series não bate: esperado {len(esp)}, obtido {len(obt)}.\n\n"
-            + _lado_a_lado(obtido.to_frame(name=obtido.name or "valor"),
-                           esperado.to_frame(name=esperado.name or "valor"))
+            + _lado_a_lado(_como_quadro(obtido), _como_quadro(esperado)),
+            tipo="numero_de_linhas",
+            esperado=_tabela_json(_como_quadro(esp)),
+            obtido=_tabela_json(_como_quadro(obt)),
         )
 
     if not ignorar_indice and not obt.index.equals(esp.index):
-        raise ErroDidatico(
+        raise _erro(
             "Os valores batem em quantidade, mas o índice não.\n\n"
             f"    esperado: {list(esp.index)[:10]}\n"
-            f"    obtido:   {list(obt.index)[:10]}"
+            f"    obtido:   {list(obt.index)[:10]}",
+            tipo="indice_diferente",
+            indice_esperado=[_para_json(v) for v in list(esp.index)[:20]],
+            indice_obtido=[_para_json(v) for v in list(obt.index)[:20]],
         )
 
     for i in range(len(esp)):
         if not _iguais(obt.iloc[i], esp.iloc[i], tolerancia):
             rotulo = esp.index[i]
-            raise ErroDidatico(
+            nome_da_coluna = str(esp.name if esp.name is not None else "valor")
+            raise _erro(
                 f"A Series tem o tamanho certo, mas difere na posição {i} "
                 f"(índice {rotulo!r}).\n\n"
                 f"    esperado: {_mostrar(esp.iloc[i])}\n"
                 f"    obtido:   {_mostrar(obt.iloc[i])}\n\n"
-                + _lado_a_lado(obtido.to_frame(name=obtido.name or "valor"),
-                               esperado.to_frame(name=esperado.name or "valor"))
+                + _lado_a_lado(_como_quadro(obtido), _como_quadro(esperado)),
+                tipo="valores_diferentes",
+                esperado=_tabela_json(_como_quadro(esp)),
+                obtido=_tabela_json(_como_quadro(obt)),
+                celulas=[{
+                    "linha": int(i), "coluna": nome_da_coluna,
+                    "esperado": _para_json(esp.iloc[i]),
+                    "obtido": _para_json(obt.iloc[i]),
+                }],
+                comparado_sem_ordem=bool(ignorar_ordem),
             )
 
     if checar_tipo_coluna and str(obt.dtype) != str(esp.dtype):
-        raise ErroDidatico(
+        raise _erro(
             f"Os valores estão certos, mas o tipo não.\n\n"
-            f"    esperado: {esp.dtype}\n    obtido:   {obt.dtype}"
+            f"    esperado: {esp.dtype}\n    obtido:   {obt.dtype}",
+            tipo="tipo_da_coluna",
+            coluna=str(esp.name if esp.name is not None else "valor"),
+            tipo_esperado=str(esp.dtype),
+            tipo_obtido=str(obt.dtype),
         )
