@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "curso-aurora"
+version = "0.1.0"
+description = "Curso progressivo e autocorrigível de Python, Pandas e SQL"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "duckdb>=1.0",
+    "pytest>=8.0",
+    "rich>=13.0",
+]
+
+[project.scripts]
+curso = "curso.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["curso*", "dados*", "autoria*"]
+
+[tool.pytest.ini_options]
+# Testes do curso são escritos em português: teste_*.py / def teste_*()
+python_files = ["teste_*.py", "test_*.py"]
+python_functions = ["teste_*", "test_*"]
+testpaths = ["exercicios", "testes_do_motor"]
+addopts = "-q --no-header -p no:cacheprovider"

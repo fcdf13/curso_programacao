@@ -1,0 +1,19 @@
+# Dados gerados por `curso setup` — reprodutíveis a partir de dados/gerar.py
+dados/brutos/
+dados/*.duckdb
+dados/*.duckdb.wal
+
+# Seu progresso e histórico de respostas (local, não versionado)
+.curso/
+
+# Suas respostas. Se quiser versionar seu próprio aprendizado,
+# comente a linha abaixo — o repo funciona dos dois jeitos.
+respostas/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
