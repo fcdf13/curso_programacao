@@ -1,0 +1,178 @@
+.titulo-da-pagina {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.titulo-da-pagina h1 {
+  font-size: 30px;
+  margin-top: 2px;
+}
+
+.titulo-da-pagina .rotulo a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.titulo-da-pagina .rotulo a:hover {
+  color: var(--sangue);
+}
+
+.carregando {
+  color: var(--texto-fraco);
+  font-size: 14px;
+}
+
+.dica {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--texto-suave);
+}
+
+/* ------------------------------------------------------------ lista de alunos */
+
+.lista-de-alunos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lista-de-alunos a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 15px 18px;
+  background: var(--fundo-painel);
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--sangue);
+  border-radius: var(--raio-pequeno);
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.lista-de-alunos a:hover {
+  border-color: var(--borda-forte);
+  border-left-color: var(--sangue);
+}
+
+.aluno-nome {
+  font-weight: 600;
+}
+
+.aluno-objetivo {
+  font-size: 13px;
+  color: var(--texto-fraco);
+}
+
+/* ------------------------------------------------------------------- ficha */
+
+.ficha {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px 24px;
+}
+
+.ficha dt {
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+  margin-bottom: 3px;
+}
+
+.ficha dd {
+  margin: 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.ficha dd.ausente {
+  color: var(--texto-fraco);
+  font-style: italic;
+}
+
+.objetivo-texto {
+  margin: 6px 0 0;
+  font-size: 17px;
+}
+
+/* -------------------------------------------------------------- exercícios */
+
+.grupo-de-exercicios h2 {
+  margin-bottom: 8px;
+}
+
+.lista-de-exercicios {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  overflow: hidden;
+}
+
+.lista-de-exercicios li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--fundo-painel);
+  border-bottom: 1px solid var(--borda);
+  font-size: 15px;
+}
+
+.lista-de-exercicios li:last-child {
+  border-bottom: none;
+}
+
+.exercicio-nome {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercicio-incremento {
+  font-family: var(--fonte-mono);
+  font-size: 12px;
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.etiqueta {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+  background: var(--fundo-fundo);
+  color: var(--texto-fraco);
+  border: 1px solid var(--borda);
+}
+
+/* Por halter é a convenção que mais confunde, então é a única destacada. */
+.etiqueta.convencao-por_halter {
+  background: var(--sangue-fundo);
+  color: var(--sangue);
+  border-color: transparent;
+}
+
+@media (max-width: 480px) {
+  .lista-de-exercicios li {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+
+  .exercicio-nome {
+    flex-basis: 100%;
+  }
+}

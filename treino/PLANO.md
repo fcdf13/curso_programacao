@@ -219,7 +219,7 @@ mesmo formato de `app/src/estilo/tokens.css` — claro como base, escuro só red
 
 | Fase | Entrega | Fecha quando |
 |---|---|---|
-| 0 | Estrutura, banco, auth, papéis, catálogo de exercícios, tokens da marca, casca do PWA | João entra, cria um aluno, aluno faz login |
+| 0 ✅ | Estrutura, banco, auth, papéis, catálogo de exercícios, tokens da marca, casca do PWA | ~~João entra, cria um aluno, aluno faz login~~ — feito; ver [`README.md`](README.md) |
 | 1 | Check-in semanal + medidas + gráficos | Aluno registra a semana, os dois veem o gráfico |
 | 2 | Periodização, prescrição, **modo academia**, registro de séries | Aluno treina lendo do celular e registra carga/reps/RIR |
 | 3 | `forca.py`, gráfico de e1RM, carga sugerida, arredondamento | Testes do paper passam; João aceita a carga sugerida |

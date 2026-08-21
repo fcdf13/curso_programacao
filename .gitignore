@@ -24,3 +24,9 @@ __pycache__/
 venv/
 .pytest_cache/
 app/*.tsbuildinfo
+
+# JF Treino — banco local, dependências e build
+treino/jf.db
+treino/web/node_modules/
+treino/web/dist/
+treino/web/*.tsbuildinfo

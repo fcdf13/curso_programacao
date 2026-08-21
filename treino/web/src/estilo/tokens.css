@@ -1,0 +1,108 @@
+/* Paleta e medidas do JF Treino.
+ *
+ * Preto, vermelho-sangue e osso, amostrados do logo do João. O escuro é a
+ * definição base — o app é usado na academia, à noite, e é assim que ele abre;
+ * o claro só redefine os tokens. Nenhuma cor é declarada exclusivamente dentro
+ * de um bloco de tema, para nada ficar sem valor se a preferência mudar.
+ *
+ * O vermelho da marca (#AD0101) não passa em contraste sobre preto, então no
+ * escuro ele clareia para #EF5A50. É o mesmo vermelho em intenção, não em hex.
+ */
+
+:root {
+  color-scheme: dark light;
+
+  --fundo: #101010;
+  --fundo-painel: #1a1717;
+  --fundo-fundo: #0a0909;
+  --fundo-campo: #221e1d;
+  --borda: #2a2524;
+  --borda-forte: #3d3634;
+
+  --texto: #f0eceb;
+  --texto-suave: #a79c99;
+  --texto-fraco: #766b68;
+
+  --sangue: #ef5a50;
+  --sangue-forte: #ff6e63;
+  --sangue-fundo: #2e1614;
+  --sobre-sangue: #ffffff;
+  --sangue-solido: #a30d0d; /* preenchimento de botão, nos dois temas */
+
+  --certo: #62d18a;
+  --certo-fundo: #14301f;
+  --atencao: #e6bb63;
+  --atencao-fundo: #322612;
+  --errado: #f08a8a;
+  --errado-fundo: #351a1c;
+
+  --raio: 8px;
+  --raio-pequeno: 5px;
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 20px rgb(0 0 0 / 0.3);
+
+  /* Archivo carrega do Google Fonts e fica em cache no service worker; a pilha
+     de reserva é o que aparece no primeiro carregamento e se a rede cair. */
+  --fonte: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --fonte-titulo: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fonte-mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --largura-conteudo: 720px;
+  --altura-cabecalho: 60px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-tema="escuro"]) {
+    --fundo: #f5f3f4;
+    --fundo-painel: #ffffff;
+    --fundo-fundo: #eae6e6;
+    --fundo-campo: #ffffff;
+    --borda: #e2dcdb;
+    --borda-forte: #cfc6c4;
+
+    --texto: #161312;
+    --texto-suave: #635958;
+    --texto-fraco: #8e8482;
+
+    --sangue: #ad0101;
+    --sangue-forte: #7a0c10;
+    --sangue-fundo: #f7e7e7;
+
+    --certo: #17703b;
+    --certo-fundo: #e4f3e8;
+    --atencao: #8a5a00;
+    --atencao-fundo: #fbf1dc;
+    --errado: #a3232a;
+    --errado-fundo: #fbe8e8;
+
+    --sombra: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.06);
+  }
+}
+
+:root[data-tema="claro"] {
+  --fundo: #f5f3f4;
+  --fundo-painel: #ffffff;
+  --fundo-fundo: #eae6e6;
+  --fundo-campo: #ffffff;
+  --borda: #e2dcdb;
+  --borda-forte: #cfc6c4;
+
+  --texto: #161312;
+  --texto-suave: #635958;
+  --texto-fraco: #8e8482;
+
+  --sangue: #ad0101;
+  --sangue-forte: #7a0c10;
+  --sangue-fundo: #f7e7e7;
+
+  --certo: #17703b;
+  --certo-fundo: #e4f3e8;
+  --atencao: #8a5a00;
+  --atencao-fundo: #fbf1dc;
+  --errado: #a3232a;
+  --errado-fundo: #fbe8e8;
+
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.06);
+}

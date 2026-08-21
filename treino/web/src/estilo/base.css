@@ -1,0 +1,215 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#raiz {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--fonte);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  /* O celular do aluno vai estar com o app instalado em tela cheia; sem isto o
+     conteúdo passa por baixo do notch e da barra de gestos. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+/* O gesto do logo: condensado, pesado, itálico, caixa alta. Reservado para o
+   nome do app e para títulos de tela — em texto corrido cansa. */
+.marca-texto {
+  font-family: var(--fonte-titulo);
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.rotulo {
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+a {
+  color: var(--sangue);
+  text-underline-offset: 2px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sangue);
+  outline-offset: 2px;
+  border-radius: var(--raio-pequeno);
+}
+
+/* ------------------------------------------------------------------ layout */
+
+.conteudo {
+  max-width: var(--largura-conteudo);
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.pilha {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.painel {
+  background: var(--fundo-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 20px;
+}
+
+.vazio {
+  border: 1px dashed var(--borda-forte);
+  border-radius: var(--raio);
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+/* ------------------------------------------------------------- formulários */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo > span {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  background: var(--fundo-campo);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-pequeno);
+  padding: 11px 12px;
+  width: 100%;
+  /* Menos de 16px faz o iOS dar zoom sozinho ao focar o campo. */
+  font-size: 16px;
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  border-color: var(--sangue);
+}
+
+.linha-de-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+/* ---------------------------------------------------------------- botões */
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  /* 44px é o mínimo tocável confortável, e o aluno usa isso de mão suada. */
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--raio-pequeno);
+  background: var(--sangue-solido);
+  color: var(--sobre-sangue);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.12s ease;
+}
+
+.botao:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.botao:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.botao.secundario {
+  background: transparent;
+  border-color: var(--borda-forte);
+  color: var(--texto);
+}
+
+.botao.discreto {
+  background: transparent;
+  color: var(--texto-suave);
+  min-height: 36px;
+  padding: 0 10px;
+}
+
+.botao.discreto:hover:not(:disabled) {
+  color: var(--texto);
+  filter: none;
+}
+
+/* ----------------------------------------------------------------- avisos */
+
+.aviso {
+  border-radius: var(--raio-pequeno);
+  padding: 11px 14px;
+  font-size: 14px;
+  border: 1px solid transparent;
+}
+
+.aviso.erro {
+  background: var(--errado-fundo);
+  border-color: var(--errado);
+  color: var(--errado);
+}
+
+.aviso.certo {
+  background: var(--certo-fundo);
+  border-color: var(--certo);
+  color: var(--certo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
