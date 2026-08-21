@@ -3,6 +3,7 @@
     jf preparar                    migra o banco e semeia os catálogos
     jf treinador "João Filho" joao@exemplo.com
     jf demonstracao                banco de brinquedo, com treino dentro
+    jf importar-alimentos taco.csv tabela nutricional para o catálogo
     jf doutor                      confere a configuração antes de subir
     jf backup arquivo.db           cópia consistente do banco, sem parar o app
     jf servir
@@ -113,6 +114,30 @@ def demonstracao(argumentos: argparse.Namespace) -> int:
     return 0
 
 
+def importar_alimentos(argumentos: argparse.Namespace) -> int:
+    """Carrega uma tabela nutricional (TACO, Open Food Facts) no catálogo.
+
+    O arquivo vem de fora porque o valor nutricional precisa ter procedência:
+    o app não embute uma tabela própria e não estima o que não foi medido.
+    """
+    from jf.alimentos import importar
+
+    with Sessao() as sessao:
+        try:
+            resultado = importar(sessao, argumentos.arquivo, fonte=argumentos.fonte)
+        except FileNotFoundError:
+            print(f"Não encontrei {argumentos.arquivo!r}.", file=sys.stderr)
+            return 1
+        except ValueError as erro:
+            print(str(erro), file=sys.stderr)
+            return 1
+
+    print(resultado)
+    campos = ", ".join(sorted(resultado.colunas or {}))
+    print(f"Colunas aproveitadas: {campos or 'nenhuma'}.")
+    return 0
+
+
 def doutor(_: argparse.Namespace) -> int:
     from jf.diagnostico import relatorio
 
@@ -183,6 +208,15 @@ def main(argv: list[str] | None = None) -> int:
     comandos.add_parser(
         "demonstracao", help="cria um banco de brinquedo com um treino dentro"
     ).set_defaults(funcao=demonstracao)
+
+    alimentos = comandos.add_parser(
+        "importar-alimentos", help="carrega uma tabela nutricional no catálogo"
+    )
+    alimentos.add_argument("arquivo", help="CSV da TACO ou do Open Food Facts")
+    alimentos.add_argument(
+        "--fonte", default="taco", help="de onde veio a tabela (padrão: taco)"
+    )
+    alimentos.set_defaults(funcao=importar_alimentos)
 
     comandos.add_parser(
         "doutor", help="confere a configuração antes de subir"

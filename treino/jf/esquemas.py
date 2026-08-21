@@ -485,3 +485,205 @@ class MeusDados(BaseModel):
     consentimentos: list[dict]
     # Só quem é aluno tem histórico de treino e check-in.
     aluno: dict | None = None
+
+
+# ---------------------------------------------------------------- dieta
+
+
+class ItemDeSubstituicaoBase(BaseModel):
+    descricao: str = Field(max_length=120)
+    quantidade: float | None = Field(default=None, gt=0, le=10000)
+    unidade: str | None = Field(default=None, max_length=20)
+
+
+class ItemDeSubstituicaoEmResposta(ItemDeSubstituicaoBase):
+    model_config = _do_orm
+
+    id: int
+    # "Cuscuz 225 g", já montado — a mesma regra em toda tela que mostrar isto.
+    porcao: str
+
+
+class GrupoBase(BaseModel):
+    nome: str = Field(max_length=80)
+    observacao: str | None = Field(default=None, max_length=200)
+    itens: list[ItemDeSubstituicaoBase] = Field(default_factory=list)
+
+
+class GrupoEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    nome: str
+    ordem: int
+    observacao: str | None
+    itens: list[ItemDeSubstituicaoEmResposta]
+
+
+class ItemDaRefeicaoBase(BaseModel):
+    descricao: str | None = Field(default=None, max_length=120)
+    # Pelo **nome** do grupo, não por id: quem monta o protocolo inteiro numa
+    # tacada só ainda não tem os ids dos grupos que está criando junto.
+    grupo: str | None = Field(default=None, max_length=80)
+    quantidade: float | None = Field(default=None, gt=0, le=10000)
+    unidade: str | None = Field(default=None, max_length=20)
+    a_gosto: bool = False
+    opcional: bool = False
+    observacao: str | None = Field(default=None, max_length=200)
+
+    @model_validator(mode="after")
+    def tem_o_que_mostrar(self) -> "ItemDaRefeicaoBase":
+        if not (self.descricao or "").strip() and not (self.grupo or "").strip():
+            raise ValueError("O item precisa de uma descrição ou de um grupo.")
+        return self
+
+
+class ItemDaRefeicaoEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    descricao: str | None
+    quantidade: float | None
+    unidade: str | None
+    a_gosto: bool
+    opcional: bool
+    observacao: str | None
+    # O grupo vem só como id: a lista completa de substituições já veio no
+    # protocolo, e repeti-la em cada item multiplicaria o mesmo dado por dez.
+    grupo_id: int | None
+
+
+class RefeicaoBase(BaseModel):
+    nome: str = Field(max_length=80)
+    horario: str | None = Field(default=None, max_length=20)
+    observacoes: str | None = Field(default=None, max_length=2000)
+    itens: list[ItemDaRefeicaoBase] = Field(default_factory=list)
+
+
+class RefeicaoEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    nome: str
+    ordem: int
+    horario: str | None
+    observacoes: str | None
+    itens: list[ItemDaRefeicaoEmResposta]
+
+
+class SuplementoBase(BaseModel):
+    nome: str = Field(max_length=80)
+    dose: str | None = Field(default=None, max_length=80)
+    momento: str | None = Field(default=None, max_length=80)
+    observacao: str | None = Field(default=None, max_length=200)
+
+
+class SuplementoEmResposta(SuplementoBase):
+    model_config = _do_orm
+
+    id: int
+    ordem: int
+
+
+class ProtocoloBase(BaseModel):
+    nome: str = Field(default="Protocolo alimentar", max_length=120)
+    kcal_alvo: int | None = Field(default=None, ge=0, le=20000)
+    deficit_kcal: int | None = Field(default=None, ge=0, le=5000)
+    proteina_g: int | None = Field(default=None, ge=0, le=2000)
+    carboidrato_g: int | None = Field(default=None, ge=0, le=2000)
+    gordura_g: int | None = Field(default=None, ge=0, le=2000)
+    observacoes: str | None = Field(default=None, max_length=4000)
+    ativo: bool = True
+
+    grupos: list[GrupoBase] = Field(default_factory=list)
+    refeicoes: list[RefeicaoBase] = Field(default_factory=list)
+    suplementos: list[SuplementoBase] = Field(default_factory=list)
+
+
+class NovoProtocolo(ProtocoloBase):
+    pass
+
+
+class ProtocoloEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    aluno_id: int
+    nome: str
+    kcal_alvo: int | None
+    deficit_kcal: int | None
+    proteina_g: int | None
+    carboidrato_g: int | None
+    gordura_g: int | None
+    observacoes: str | None
+    ativo: bool
+    criado_em: datetime
+
+    grupos: list[GrupoEmResposta]
+    refeicoes: list[RefeicaoEmResposta]
+    suplementos: list[SuplementoEmResposta]
+
+
+class ProtocoloNaLista(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    nome: str
+    ativo: bool
+    criado_em: datetime
+    kcal_alvo: int | None
+    deficit_kcal: int | None
+
+
+class AlimentoEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    nome: str
+    marca: str | None
+    fonte: str
+    # Sempre por 100 g, e `None` quando a tabela não mediu — não zero: zero é
+    # uma afirmação, "não medido" não é.
+    kcal_100g: float | None
+    proteina_100g: float | None
+    carboidrato_100g: float | None
+    gordura_100g: float | None
+    fibra_100g: float | None
+
+
+# ------------------------------------------------- leitura do protocolo
+
+
+class TextoDoProtocolo(BaseModel):
+    texto: str = Field(max_length=20000)
+    nome: str = Field(default="Protocolo alimentar", max_length=120)
+
+
+class ProtocoloLidoEmResposta(BaseModel):
+    """O rascunho pronto para editar, e o que ficou de fora.
+
+    `nao_entendidas` não é detalhe de erro: é o que a tela mostra ao João para
+    ele conferir. Uma linha perdida em silêncio é pior que uma linha recusada.
+    """
+
+    protocolo: ProtocoloBase
+    nao_entendidas: list[str]
+
+
+# ------------------------------------------------------------- aderência
+
+
+class MarcacaoDaRefeicao(BaseModel):
+    dia: date = Field(default_factory=date.today)
+    seguiu: bool = True
+    observacao: str | None = Field(default=None, max_length=200)
+
+
+class AderenciaEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    refeicao_id: int
+    dia: date
+    seguiu: bool
+    observacao: str | None

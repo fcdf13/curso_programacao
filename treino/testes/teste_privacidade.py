@@ -194,6 +194,41 @@ def teste_exportar_traz_tudo(consentido, cenario):
     assert dados["aluno"]["perfil"]["treinador"] == "João Filho"
 
 
+def teste_exportar_traz_a_dieta(consentido, cenario, cliente):
+    """O termo promete "cópia completa" — a dieta é dado de saúde e entra nela."""
+    aluno_id = cenario["filipe"].id
+    protocolo = cliente("joao@exemplo.com").post(
+        f"/api/alunos/{aluno_id}/protocolos",
+        json={
+            "nome": "Corte",
+            "deficit_kcal": 500,
+            "grupos": [
+                {
+                    "nome": "Carboidratos",
+                    "itens": [{"descricao": "Arroz", "quantidade": 200, "unidade": "g"}],
+                }
+            ],
+            "refeicoes": [{"nome": "Almoço", "itens": [{"descricao": "Arroz"}]}],
+            "suplementos": [{"nome": "Ioimbina", "dose": "5 mg"}],
+        },
+    ).json()
+    consentido.put(
+        f"/api/refeicoes/{protocolo['refeicoes'][0]['id']}/aderencia",
+        json={"seguiu": False, "observacao": "comi fora"},
+    )
+
+    dieta = consentido.get("/api/eu/dados").json()["aluno"]["dieta"]
+    assert len(dieta) == 1
+    assert dieta[0]["deficit_kcal"] == 500
+    # A quantidade vem junto: a substituição sem ela não é o protocolo.
+    assert dieta[0]["grupos_de_substituicao"][0]["itens"] == ["Arroz 200 g"]
+    assert dieta[0]["refeicoes"][0]["itens"][0]["grupo"] == "Carboidratos"
+    assert dieta[0]["suplementos"][0]["dose"] == "5 mg"
+
+    marcacoes = consentido.get("/api/eu/dados").json()["aluno"]["aderencia_as_refeicoes"]
+    assert marcacoes[0]["observacao"] == "comi fora"
+
+
 def teste_a_exportacao_nao_leva_a_senha(consentido):
     """Nem embaralhada: ela é credencial, não dado sobre a pessoa."""
     import json
@@ -282,6 +317,19 @@ def teste_apagar_nao_deixa_nada_para_tras(consentido, cenario, sessao_de_banco, 
         json={"series": [{"reps": 10, "carga_kg": 60, "tecnica_ids": [cluster.id]}]},
     )
 
+    # Um protocolo alimentar com refeição marcada.
+    protocolo = joao.post(
+        f"/api/alunos/{aluno_id}/protocolos",
+        json={
+            "grupos": [{"nome": "Carboidratos", "itens": [{"descricao": "Arroz"}]}],
+            "refeicoes": [{"nome": "Almoço", "itens": [{"descricao": "Arroz"}]}],
+            "suplementos": [{"nome": "Ioimbina"}],
+        },
+    ).json()
+    consentido.put(
+        f"/api/refeicoes/{protocolo['refeicoes'][0]['id']}/aderencia", json={}
+    )
+
     # O outro aluno fica, para provar que a exclusão é cirúrgica.
     outro = cliente("outro@exemplo.com")
     outro.post("/api/eu/consentimento")
@@ -312,7 +360,9 @@ def teste_apagar_nao_deixa_nada_para_tras(consentido, cenario, sessao_de_banco, 
 
     # E as tabelas que pendem indiretamente também foram junto.
     for tabela in ("sessao_modelo", "prescricao", "serie_da_prescricao",
-                   "prescricao_tecnica", "serie_tecnica", "medida_corporal"):
+                   "prescricao_tecnica", "serie_tecnica", "medida_corporal",
+                   "grupo_de_substituicao", "item_de_substituicao", "refeicao",
+                   "item_da_refeicao", "suplemento"):
         assert sessao_de_banco.execute(
             text(f"SELECT COUNT(*) FROM {tabela}")
         ).scalar_one() == 0, f"{tabela} não ficou vazia"

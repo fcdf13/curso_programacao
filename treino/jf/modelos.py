@@ -625,3 +625,259 @@ class Consentimento(Base):
     def __repr__(self) -> str:
         estado = "ativo" if self.ativo else "revogado"
         return f"<Consentimento {self.usuario_id} {self.versao_do_termo} {estado}>"
+
+
+# ============================================================ dieta
+
+
+class ProtocoloAlimentar(Base):
+    """O protocolo do aluno — o PDF do João virando estrutura.
+
+    Guarda as metas, mas o coração são os `grupos`: o protocolo dele não diz
+    "coma 200 g de arroz", diz "coma um carboidrato, e estes aqui equivalem".
+    Representar isso como texto perderia a substituição, que é a parte que o
+    aluno usa todo dia.
+    """
+
+    __tablename__ = "protocolo_alimentar"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    aluno_id: Mapped[int] = mapped_column(
+        ForeignKey("aluno.id", ondelete="CASCADE"), index=True
+    )
+    nome: Mapped[str] = mapped_column(String(120))
+
+    kcal_alvo: Mapped[int | None] = mapped_column(Integer, default=None)
+    # Guardado à parte do alvo porque é assim que o João escreve: "500 calorias
+    # total de déficit por dia" é a instrução, não o total resultante.
+    deficit_kcal: Mapped[int | None] = mapped_column(Integer, default=None)
+    proteina_g: Mapped[int | None] = mapped_column(Integer, default=None)
+    carboidrato_g: Mapped[int | None] = mapped_column(Integer, default=None)
+    gordura_g: Mapped[int | None] = mapped_column(Integer, default=None)
+
+    observacoes: Mapped[str | None] = mapped_column(Text, default=None)
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+
+    aluno: Mapped[Aluno] = relationship()
+    grupos: Mapped[list["GrupoDeSubstituicao"]] = relationship(
+        back_populates="protocolo",
+        cascade="all, delete-orphan",
+        order_by="GrupoDeSubstituicao.ordem",
+    )
+    refeicoes: Mapped[list["Refeicao"]] = relationship(
+        back_populates="protocolo",
+        cascade="all, delete-orphan",
+        order_by="Refeicao.ordem",
+    )
+    suplementos: Mapped[list["Suplemento"]] = relationship(
+        back_populates="protocolo",
+        cascade="all, delete-orphan",
+        order_by="Suplemento.ordem",
+    )
+
+
+class GrupoDeSubstituicao(Base):
+    """Itens que valem uns pelos outros: arroz 200 g ≡ cuscuz 225 g.
+
+    As quantidades diferem entre os itens de propósito — é o que torna a troca
+    equivalente. Guardar só o nome do alimento perderia justamente a informação
+    que o João calculou.
+    """
+
+    __tablename__ = "grupo_de_substituicao"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    protocolo_id: Mapped[int] = mapped_column(
+        ForeignKey("protocolo_alimentar.id", ondelete="CASCADE"), index=True
+    )
+    nome: Mapped[str] = mapped_column(String(80))
+    ordem: Mapped[int] = mapped_column(Integer, default=0)
+    observacao: Mapped[str | None] = mapped_column(String(200), default=None)
+
+    protocolo: Mapped[ProtocoloAlimentar] = relationship(back_populates="grupos")
+    itens: Mapped[list["ItemDeSubstituicao"]] = relationship(
+        back_populates="grupo",
+        cascade="all, delete-orphan",
+        order_by="ItemDeSubstituicao.ordem",
+    )
+
+
+class ItemDeSubstituicao(Base):
+    """Uma das opções de um grupo: "Cuscuz, 225 g"."""
+
+    __tablename__ = "item_de_substituicao"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    grupo_id: Mapped[int] = mapped_column(
+        ForeignKey("grupo_de_substituicao.id", ondelete="CASCADE"), index=True
+    )
+    ordem: Mapped[int] = mapped_column(Integer, default=0)
+    descricao: Mapped[str] = mapped_column(String(120))
+    quantidade: Mapped[float | None] = mapped_column(Float, default=None)
+    unidade: Mapped[str | None] = mapped_column(String(20), default=None)
+    # Ligação com o catálogo, quando ele existir. Nulo não impede nada: o
+    # protocolo funciona inteiro sem tabela nutricional.
+    alimento_id: Mapped[int | None] = mapped_column(
+        ForeignKey("alimento.id"), default=None
+    )
+
+    grupo: Mapped[GrupoDeSubstituicao] = relationship(back_populates="itens")
+    alimento: Mapped["Alimento | None"] = relationship()
+
+    @property
+    def porcao(self) -> str:
+        """Como se lê: "Cuscuz 225 g", "Pão francês 2 unidades", "Azeite"."""
+        if self.quantidade is None:
+            return self.descricao
+        quantidade = (
+            f"{self.quantidade:g}" if self.quantidade % 1 else f"{int(self.quantidade)}"
+        )
+        return f"{self.descricao} {quantidade}{' ' + self.unidade if self.unidade else ''}"
+
+
+class Refeicao(Base):
+    """Uma refeição do dia: "1ª refeição — café"."""
+
+    __tablename__ = "refeicao"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    protocolo_id: Mapped[int] = mapped_column(
+        ForeignKey("protocolo_alimentar.id", ondelete="CASCADE"), index=True
+    )
+    nome: Mapped[str] = mapped_column(String(80))
+    ordem: Mapped[int] = mapped_column(Integer, default=0)
+    horario: Mapped[str | None] = mapped_column(String(20), default=None)
+    observacoes: Mapped[str | None] = mapped_column(Text, default=None)
+
+    protocolo: Mapped[ProtocoloAlimentar] = relationship(back_populates="refeicoes")
+    itens: Mapped[list["ItemDaRefeicao"]] = relationship(
+        back_populates="refeicao",
+        cascade="all, delete-orphan",
+        order_by="ItemDaRefeicao.ordem",
+    )
+
+
+class ItemDaRefeicao(Base):
+    """O que entra numa refeição.
+
+    Traz a descrição do que o João escreveu ("Ovos") e, quando esse alimento
+    está em algum grupo, o `grupo_id` — que é o que permite mostrar "ou troque
+    por: Frango 200 g, Peixe 250 g". O que não é substituível ("Legumes a
+    gosto") fica só com a descrição.
+    """
+
+    __tablename__ = "item_da_refeicao"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    refeicao_id: Mapped[int] = mapped_column(
+        ForeignKey("refeicao.id", ondelete="CASCADE"), index=True
+    )
+    ordem: Mapped[int] = mapped_column(Integer, default=0)
+
+    grupo_id: Mapped[int | None] = mapped_column(
+        ForeignKey("grupo_de_substituicao.id", ondelete="CASCADE"), default=None
+    )
+    descricao: Mapped[str | None] = mapped_column(String(120), default=None)
+    quantidade: Mapped[float | None] = mapped_column(Float, default=None)
+    unidade: Mapped[str | None] = mapped_column(String(20), default=None)
+
+    # "Legumes a gosto" — sem quantidade por decisão, não por esquecimento.
+    a_gosto: Mapped[bool] = mapped_column(Boolean, default=False)
+    # No PDF do João o opcional vem entre parênteses: "(Azeite)".
+    opcional: Mapped[bool] = mapped_column(Boolean, default=False)
+    observacao: Mapped[str | None] = mapped_column(String(200), default=None)
+
+    refeicao: Mapped[Refeicao] = relationship(back_populates="itens")
+    grupo: Mapped[GrupoDeSubstituicao | None] = relationship()
+
+    @property
+    def rotulo(self) -> str:
+        """O que o aluno lê na linha da refeição.
+
+        A descrição ganha do grupo: o João escreveu "Ovos", e trocar isso por
+        "Proteínas" na tela apagaria a escolha dele. O grupo entra ao lado,
+        como as substituições possíveis — não no lugar.
+        """
+        if self.descricao:
+            return self.descricao
+        return self.grupo.nome if self.grupo is not None else ""
+
+
+class Suplemento(Base):
+    """Suplemento com dose e momento — "Ioimbina 5 mg, 2 cps em jejum"."""
+
+    __tablename__ = "suplemento"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    protocolo_id: Mapped[int] = mapped_column(
+        ForeignKey("protocolo_alimentar.id", ondelete="CASCADE"), index=True
+    )
+    ordem: Mapped[int] = mapped_column(Integer, default=0)
+    nome: Mapped[str] = mapped_column(String(80))
+    dose: Mapped[str | None] = mapped_column(String(80), default=None)
+    momento: Mapped[str | None] = mapped_column(String(80), default=None)
+    observacao: Mapped[str | None] = mapped_column(String(200), default=None)
+
+    protocolo: Mapped[ProtocoloAlimentar] = relationship(back_populates="suplementos")
+
+
+class AderenciaDaRefeicao(Base):
+    """O aluno marcando o que fez, refeição por refeição, dia a dia.
+
+    Índice único por (aluno, refeição, dia): marcar duas vezes é a mesma
+    marcação, não duas — senão o percentual de aderência passaria de 100%.
+    """
+
+    __tablename__ = "aderencia_da_refeicao"
+    __table_args__ = (
+        UniqueConstraint(
+            "aluno_id", "refeicao_id", "dia", name="uma_marcacao_por_refeicao_por_dia"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    aluno_id: Mapped[int] = mapped_column(
+        ForeignKey("aluno.id", ondelete="CASCADE"), index=True
+    )
+    refeicao_id: Mapped[int] = mapped_column(
+        ForeignKey("refeicao.id", ondelete="CASCADE"), index=True
+    )
+    dia: Mapped[date] = mapped_column(Date, index=True)
+    seguiu: Mapped[bool] = mapped_column(Boolean, default=True)
+    observacao: Mapped[str | None] = mapped_column(String(200), default=None)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+
+    aluno: Mapped[Aluno] = relationship()
+    refeicao: Mapped[Refeicao] = relationship()
+
+
+class Alimento(Base):
+    """Catálogo nutricional — TACO e Open Food Facts.
+
+    Nasce **vazio**. Os valores vêm de `jf importar-alimentos`, lendo a tabela
+    oficial: inventar kcal e macro num app que alguém usa para cortar peso
+    seria dano de verdade, não aproximação. Nada no protocolo depende desta
+    tabela; ela só acrescenta o cálculo por cima.
+    """
+
+    __tablename__ = "alimento"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    nome: Mapped[str] = mapped_column(String(200), index=True)
+    marca: Mapped[str | None] = mapped_column(String(120), default=None)
+    fonte: Mapped[str] = mapped_column(String(30), default="taco")
+    codigo_de_barras: Mapped[str | None] = mapped_column(
+        String(20), default=None, index=True
+    )
+
+    # Sempre por 100 g: é a base comum da TACO e do Open Food Facts, e evita
+    # guardar duas convenções na mesma coluna.
+    kcal_100g: Mapped[float | None] = mapped_column(Float, default=None)
+    proteina_100g: Mapped[float | None] = mapped_column(Float, default=None)
+    carboidrato_100g: Mapped[float | None] = mapped_column(Float, default=None)
+    gordura_100g: Mapped[float | None] = mapped_column(Float, default=None)
+    fibra_100g: Mapped[float | None] = mapped_column(Float, default=None)
+
+    def __repr__(self) -> str:
+        return f"<Alimento {self.nome}>"

@@ -15,11 +15,13 @@ from jf.auth import usuario_atual
 from jf.banco import obter_sessao
 from jf.esquemas import EstadoDoConsentimento, MeusDados, TermoEmResposta
 from jf.modelos import (
+    AderenciaDaRefeicao,
     Aluno,
     CheckinSemanal,
     Consentimento,
     Papel,
     Periodizacao,
+    ProtocoloAlimentar,
     Usuario,
     agora,
 )
@@ -104,6 +106,18 @@ def _do_aluno(aluno: Aluno, sessao: Session) -> dict:
         .order_by(Periodizacao.criada_em)
         .all()
     )
+    protocolos = (
+        sessao.query(ProtocoloAlimentar)
+        .filter(ProtocoloAlimentar.aluno_id == aluno.id)
+        .order_by(ProtocoloAlimentar.criado_em)
+        .all()
+    )
+    marcacoes = (
+        sessao.query(AderenciaDaRefeicao)
+        .filter(AderenciaDaRefeicao.aluno_id == aluno.id)
+        .order_by(AderenciaDaRefeicao.dia)
+        .all()
+    )
 
     return {
         "perfil": {
@@ -185,6 +199,68 @@ def _do_aluno(aluno: Aluno, sessao: Session) -> dict:
                 ],
             }
             for bloco in blocos
+        ],
+        # A dieta entra por inteiro: as substituições sem as quantidades não
+        # são o protocolo, são uma lista de compras.
+        "dieta": [
+            {
+                "nome": protocolo.nome,
+                "criado_em": protocolo.criado_em,
+                "ativo": protocolo.ativo,
+                "kcal_alvo": protocolo.kcal_alvo,
+                "deficit_kcal": protocolo.deficit_kcal,
+                "proteina_g": protocolo.proteina_g,
+                "carboidrato_g": protocolo.carboidrato_g,
+                "gordura_g": protocolo.gordura_g,
+                "observacoes": protocolo.observacoes,
+                "grupos_de_substituicao": [
+                    {
+                        "nome": grupo.nome,
+                        "observacao": grupo.observacao,
+                        "itens": [item.porcao for item in grupo.itens],
+                    }
+                    for grupo in protocolo.grupos
+                ],
+                "refeicoes": [
+                    {
+                        "nome": refeicao.nome,
+                        "horario": refeicao.horario,
+                        "observacoes": refeicao.observacoes,
+                        "itens": [
+                            {
+                                "descricao": item.rotulo,
+                                "quantidade": item.quantidade,
+                                "unidade": item.unidade,
+                                "grupo": item.grupo.nome if item.grupo else None,
+                                "a_gosto": item.a_gosto,
+                                "opcional": item.opcional,
+                                "observacao": item.observacao,
+                            }
+                            for item in refeicao.itens
+                        ],
+                    }
+                    for refeicao in protocolo.refeicoes
+                ],
+                "suplementos": [
+                    {
+                        "nome": s.nome,
+                        "dose": s.dose,
+                        "momento": s.momento,
+                        "observacao": s.observacao,
+                    }
+                    for s in protocolo.suplementos
+                ],
+            }
+            for protocolo in protocolos
+        ],
+        "aderencia_as_refeicoes": [
+            {
+                "dia": m.dia,
+                "refeicao": m.refeicao.nome,
+                "seguiu": m.seguiu,
+                "observacao": m.observacao,
+            }
+            for m in marcacoes
         ],
     }
 

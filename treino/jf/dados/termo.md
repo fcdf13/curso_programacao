@@ -27,10 +27,17 @@ e é por isso que este consentimento existe:
 **Sobre o seu treino**
 Os exercícios que o João prescreveu, com séries, repetições, carga e técnicas.
 
+**Sobre a sua dieta** — isto também é **dado de saúde**:
+
+- o protocolo alimentar que o João montou para você, com as refeições, as
+  quantidades e as substituições possíveis;
+- os suplementos prescritos, com dose e horário;
+- quais refeições você marcou como seguidas, e o que escreveu sobre elas.
+
 ## Para que serve
 
-Um único propósito: **o João acompanhar o seu treino e ajustar o que ele
-prescreve.** O app usa esses dados para desenhar os seus gráficos de evolução e
+Um único propósito: **o João acompanhar o seu treino e a sua dieta, e ajustar
+o que ele prescreve.** O app usa esses dados para desenhar os seus gráficos de evolução e
 para estimar a carga de trabalho a partir do que você levantou.
 
 Seus dados **não** são vendidos, **não** alimentam publicidade e **não** vão
@@ -68,8 +75,8 @@ Tudo isso fica na tela **Meus dados**, dentro do app.
 ## Se você não concordar
 
 Você não é obrigado a aceitar. Sem este consentimento, o app não registra
-check-in nem medidas — mas você continua conseguindo entrar e ver o treino que o
-João montou.
+check-in, medidas nem marcação de refeição — mas você continua conseguindo
+entrar e ver o treino e a dieta que o João montou.
 
 ## Segurança
 
