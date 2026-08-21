@@ -4,7 +4,9 @@ import type {
   Aluno,
   Exercicio,
   EscopoDaTecnica,
+  Leitura,
   NovaPrescricao,
+  NovaSerie,
   NovoAluno,
   PedidoDeEstimativa,
   Periodizacao,
@@ -128,6 +130,14 @@ export const api = {
 
   apagarPrescricao: (id: number) =>
     pedir<void>(`/prescricoes/${id}`, { method: "DELETE" }),
+
+  /** Reescreve a progressão inteira: substitui, não acrescenta. */
+  definirSeries: (prescricaoId: number, series: NovaSerie[]) =>
+    pedir<Prescricao>(`/prescricoes/${prescricaoId}/series`, comCorpo("PUT", { series })),
+
+  /** Lê o texto escrito à mão sem gravar nada — a tela mostra antes de salvar. */
+  lerTexto: (texto: string) =>
+    pedir<Leitura>("/prescricoes/ler-texto", comCorpo("POST", { texto })),
 
   // -------------------------------------------------------- calculadora
 

@@ -10,8 +10,10 @@ import { Link, useParams } from "react-router-dom";
 import { api, ErroDaApi } from "../api/cliente";
 import type { Exercicio, Periodizacao as Bloco, Prescricao, SessaoModelo, Tecnica } from "../api/tipos";
 import { EditorDePrescricao } from "../componentes/EditorDePrescricao";
+import { EditorDeSeries } from "../componentes/EditorDeSeries";
 import { useSessao } from "../sessao";
 import "../componentes/prescricao.css";
+import "../componentes/series.css";
 import "./paginas.css";
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
@@ -181,6 +183,7 @@ function Treino({
   recarregar,
 }: TreinoProps) {
   const abertoAqui = editando?.sessaoId === treino.id;
+  const [seriesDe, definirSeriesDe] = useState<number | null>(null);
 
   async function apagar(prescricao: Prescricao) {
     await api.apagarPrescricao(prescricao.id);
@@ -216,13 +219,32 @@ function Treino({
       {treino.prescricoes.length > 0 && (
         <div className="lista-de-prescricoes">
           {treino.prescricoes.map((prescricao) => (
-            <Linha
-              key={prescricao.id}
-              prescricao={prescricao}
-              podeEditar={podeEditar}
-              aoEditar={() => definirEditando({ sessaoId: treino.id, prescricao })}
-              aoApagar={() => apagar(prescricao)}
-            />
+            <div key={prescricao.id}>
+              <Linha
+                prescricao={prescricao}
+                podeEditar={podeEditar}
+                editandoSeries={seriesDe === prescricao.id}
+                aoEditar={() => definirEditando({ sessaoId: treino.id, prescricao })}
+                aoApagar={() => apagar(prescricao)}
+                aoAbrirSeries={() =>
+                  definirSeriesDe((atual) =>
+                    atual === prescricao.id ? null : prescricao.id,
+                  )
+                }
+              />
+              {seriesDe === prescricao.id && (
+                <div className="encaixe-do-editor">
+                  <EditorDeSeries
+                    prescricao={prescricao}
+                    tecnicas={tecnicas}
+                    aoSalvar={async () => {
+                      definirSeriesDe(null);
+                      await recarregar();
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -244,16 +266,41 @@ function Treino({
   );
 }
 
+const TIPO_CURTO: Record<string, string> = {
+  up_set: "up set",
+  aquecimento: "aquec.",
+  back_off: "back off",
+  valida: "",
+};
+
+/** Como a série se lê na academia: "12x50kg", "12x50 a 92kg", "up set 40 a 100kg". */
+function textoDaSerie(serie: Prescricao["series_detalhadas"][number]): string {
+  const carga =
+    serie.carga_kg === null
+      ? "—"
+      : serie.carga_ate_kg !== null
+        ? `${numero(serie.carga_kg, 1)} a ${numero(serie.carga_ate_kg, 1)} kg`
+        : `${numero(serie.carga_kg, 1)} kg`;
+
+  const rotulo = TIPO_CURTO[serie.tipo];
+  if (serie.reps === null) return `${rotulo || "rampa"} ${carga}`.trim();
+  return `${serie.reps}× ${carga}${rotulo ? ` (${rotulo})` : ""}`;
+}
+
 function Linha({
   prescricao,
   podeEditar,
+  editandoSeries,
   aoEditar,
   aoApagar,
+  aoAbrirSeries,
 }: {
   prescricao: Prescricao;
   podeEditar: boolean;
+  editandoSeries: boolean;
   aoEditar: () => void;
   aoApagar: () => void;
+  aoAbrirSeries: () => void;
 }) {
   const faixa =
     prescricao.reps_min === prescricao.reps_max
@@ -272,13 +319,20 @@ function Linha({
 
         <span className="prescricao-nome">{prescricao.exercicio.nome}</span>
 
-        <span className="prescricao-carga">
-          {prescricao.series} × {faixa}
-          {prescricao.carga_alvo_kg !== null && ` · ${numero(prescricao.carga_alvo_kg, 1)} kg`}
-        </span>
+        {/* Com progressão o resumo mente por omissão, então some. */}
+        {!prescricao.tem_progressao && (
+          <span className="prescricao-carga">
+            {prescricao.series} × {faixa}
+            {prescricao.carga_alvo_kg !== null &&
+              ` · ${numero(prescricao.carga_alvo_kg, 1)} kg`}
+          </span>
+        )}
 
         {podeEditar && (
           <div className="prescricao-acoes">
+            <button type="button" className="botao discreto" onClick={aoAbrirSeries}>
+              {editandoSeries ? "Fechar séries" : "Séries"}
+            </button>
             <button type="button" className="botao discreto" onClick={aoEditar}>
               Editar
             </button>
@@ -288,6 +342,26 @@ function Linha({
           </div>
         )}
       </div>
+
+      {prescricao.series_detalhadas.length > 0 && (
+        <ol className="progressao">
+          {prescricao.series_detalhadas.map((serie) => (
+            <li
+              key={serie.id}
+              className={`serie-pastilha tipo-${serie.tipo}`}
+              title={serie.tecnicas.map((t) => t.nome).join(", ") || undefined}
+            >
+              {textoDaSerie(serie)}
+              {serie.tecnicas.map((t) => (
+                <span key={t.id} className="serie-tecnica">
+                  {t.nome}
+                  {t.distorce_estimativa && <span aria-hidden="true"> ⚠</span>}
+                </span>
+              ))}
+            </li>
+          ))}
+        </ol>
+      )}
 
       <div className="prescricao-secundaria">
         <span className="prescricao-detalhe">

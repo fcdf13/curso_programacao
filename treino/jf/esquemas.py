@@ -18,6 +18,7 @@ from jf.modelos import (
     FaseDaPeriodizacao,
     Papel,
     Sexo,
+    TipoDeSerie,
 )
 
 _do_orm = ConfigDict(from_attributes=True)
@@ -159,7 +160,11 @@ class PrescricaoEmResposta(BaseModel):
     agrupamento: TecnicaEmResposta | None
     tecnicas: list[TecnicaEmResposta]
 
-    # Séries × repetições × carga. Mede trabalho, não força.
+    # As séries individuais, quando há progressão de carga entre elas.
+    series_detalhadas: list["SerieEmResposta"]
+    tem_progressao: bool
+
+    # Repetições × carga somadas nas séries de trabalho. Mede trabalho, não força.
     tonelagem_prevista: float | None
     distorce_estimativa: bool
 
@@ -266,3 +271,94 @@ class RespostaDaCalculadora(BaseModel):
     tabela: list[SugestaoDeCarga]
     # As outras equações no mesmo caso, para o João poder comparar.
     comparacao: dict[str, float]
+
+
+# ------------------------------------------------------------------- séries
+
+
+class SerieBase(BaseModel):
+    ordem: int = 0
+    reps: int | None = Field(default=None, ge=1, le=100)
+    carga_kg: float | None = Field(default=None, ge=0, le=1000)
+    carga_ate_kg: float | None = Field(default=None, ge=0, le=1000)
+    tipo: TipoDeSerie = TipoDeSerie.VALIDA
+    rir: int | None = Field(default=None, ge=0, le=10)
+    observacao: str | None = Field(default=None, max_length=200)
+    tecnica_ids: list[int] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def rampa_coerente(self) -> "SerieBase":
+        if self.carga_ate_kg is None:
+            return self
+        if self.carga_kg is None:
+            raise ValueError("Uma rampa precisa da carga inicial.")
+        if self.carga_ate_kg <= self.carga_kg:
+            raise ValueError(
+                "Na rampa a carga final precisa ser maior que a inicial; "
+                "para carga fixa, deixe o segundo campo em branco."
+            )
+        return self
+
+
+class NovaSerie(SerieBase):
+    pass
+
+
+class SerieEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    ordem: int
+    reps: int | None
+    carga_kg: float | None
+    carga_ate_kg: float | None
+    tipo: TipoDeSerie
+    rir: int | None
+    observacao: str | None
+    tecnicas: list[TecnicaEmResposta]
+
+    em_rampa: bool
+    tonelagem: float | None
+    # Se esta série pode virar estimativa de 1RM — rampa, aquecimento e técnica
+    # que quebra a contagem de repetições ficam de fora.
+    serve_para_1rm: bool
+
+
+class SeriesEmLote(BaseModel):
+    """Substitui todas as séries de uma prescrição de uma vez.
+
+    Substituição e não acréscimo: editar a progressão é reescrever a lista, e
+    tentar casar item a item com o que já existe convidaria a duplicação.
+    """
+
+    series: list[NovaSerie] = Field(max_length=30)
+
+
+# ------------------------------------------------------ leitura do texto
+
+
+class TextoDaPrescricao(BaseModel):
+    texto: str = Field(max_length=4000)
+
+
+class LinhaLidaEmResposta(BaseModel):
+    texto: str
+    entendida: bool
+    erro: str | None
+    reps: int | None
+    carga_kg: float | None
+    carga_ate_kg: float | None
+    tipo: TipoDeSerie
+    observacao: str | None
+    # Só as que existem no catálogo; as citadas e não encontradas vêm à parte.
+    tecnica_ids: list[int]
+    tecnicas: list[str]
+
+
+class LeituraEmResposta(BaseModel):
+    linhas: list[LinhaLidaEmResposta]
+    entendidas: int
+    nao_entendidas: int
+
+
+PrescricaoEmResposta.model_rebuild()

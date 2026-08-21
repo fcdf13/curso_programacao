@@ -12,22 +12,28 @@ from sqlalchemy.orm import Session
 
 from jf.auth import aluno_permitido, exigir_acesso, treinador_atual, usuario_atual
 from jf.banco import obter_sessao
+from jf.leitura import ler
 from jf.esquemas import (
     EdicaoDaPeriodizacao,
+    LeituraEmResposta,
+    LinhaLidaEmResposta,
     NovaPeriodizacao,
     NovaPrescricao,
     NovaSessaoModelo,
     PeriodizacaoEmResposta,
     PeriodizacaoNaLista,
     PrescricaoEmResposta,
+    SeriesEmLote,
     SessaoModeloEmResposta,
     TecnicaEmResposta,
+    TextoDaPrescricao,
 )
 from jf.modelos import (
     Aluno,
     EscopoDaTecnica,
     Periodizacao,
     Prescricao,
+    SerieDaPrescricao,
     SessaoModelo,
     Tecnica,
     Usuario,
@@ -301,3 +307,115 @@ def apagar_prescricao(
 ) -> None:
     sessao.delete(prescricao)
     sessao.commit()
+
+
+# -------------------------------------------------------- séries da prescrição
+
+
+def _tecnicas_da_serie(sessao: Session, ids: list[int]) -> list[Tecnica]:
+    """Como `_conferir_tecnicas`, mas para uma série: agrupamento não cabe aqui.
+
+    Bi-set liga exercícios; não faz sentido numa série isolada de um deles.
+    """
+    if not ids:
+        return []
+    tecnicas = list(sessao.scalars(select(Tecnica).where(Tecnica.id.in_(set(ids)))).all())
+    if len(tecnicas) != len(set(ids)):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "Técnica desconhecida."
+        )
+    for tecnica in tecnicas:
+        if tecnica.escopo is EscopoDaTecnica.AGRUPAMENTO:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                f"{tecnica.nome} liga exercícios diferentes; ela não cabe numa "
+                "série isolada.",
+            )
+    return tecnicas
+
+
+@rotas.put("/prescricoes/{prescricao_id}/series", response_model=PrescricaoEmResposta)
+def definir_series(
+    lote: SeriesEmLote,
+    prescricao: Prescricao = Depends(prescricao_permitida),
+    _: Usuario = Depends(treinador_atual),
+    sessao: Session = Depends(obter_sessao),
+) -> Prescricao:
+    """Reescreve a progressão inteira do exercício.
+
+    Mantém `Prescricao.series` igual ao número de séries de trabalho, para o
+    resumo nunca discordar da lista que está logo abaixo dele na tela.
+    """
+    novas = []
+    for posicao, dados in enumerate(lote.series):
+        novas.append(
+            SerieDaPrescricao(
+                ordem=dados.ordem if dados.ordem else posicao,
+                reps=dados.reps,
+                carga_kg=dados.carga_kg,
+                carga_ate_kg=dados.carga_ate_kg,
+                tipo=dados.tipo,
+                rir=dados.rir,
+                observacao=dados.observacao,
+                tecnicas=_tecnicas_da_serie(sessao, dados.tecnica_ids),
+            )
+        )
+
+    prescricao.series_detalhadas = novas
+    de_trabalho = [s for s in novas if s.tipo.conta_no_volume]
+    if de_trabalho:
+        prescricao.series = len(de_trabalho)
+        repeticoes = [s.reps for s in de_trabalho if s.reps is not None]
+        if repeticoes:
+            prescricao.reps_min = min(repeticoes)
+            prescricao.reps_max = max(repeticoes)
+        cargas = [s.carga_media_kg for s in de_trabalho if s.carga_media_kg is not None]
+        # Com progressão, a "carga alvo" do resumo é a mais pesada — é a que
+        # descreve o exercício. A lista logo abaixo mostra as outras.
+        prescricao.carga_alvo_kg = max(cargas) if cargas else None
+
+    sessao.commit()
+    sessao.refresh(prescricao)
+    return prescricao
+
+
+@rotas.post("/prescricoes/ler-texto", response_model=LeituraEmResposta)
+def ler_texto(
+    pedido: TextoDaPrescricao,
+    _: Usuario = Depends(treinador_atual),
+    sessao: Session = Depends(obter_sessao),
+) -> LeituraEmResposta:
+    """Lê a prescrição escrita à mão e devolve as séries que entendeu.
+
+    Não grava nada: a tela mostra o resultado para o João conferir antes de
+    salvar. Linhas não entendidas voltam com o motivo, em vez de sumirem.
+    """
+    catalogo = {
+        tecnica.nome: tecnica.id
+        for tecnica in sessao.scalars(
+            select(Tecnica).where(Tecnica.ativo.is_(True))
+        ).all()
+    }
+
+    linhas = [
+        LinhaLidaEmResposta(
+            texto=linha.texto,
+            entendida=linha.entendida,
+            erro=linha.erro,
+            reps=linha.reps,
+            carga_kg=linha.carga_kg,
+            carga_ate_kg=linha.carga_ate_kg,
+            tipo=linha.tipo,
+            observacao=linha.observacao,
+            tecnica_ids=[catalogo[nome] for nome in linha.tecnicas],
+            tecnicas=linha.tecnicas,
+        )
+        for linha in ler(pedido.texto, list(catalogo))
+    ]
+
+    entendidas = sum(1 for linha in linhas if linha.entendida)
+    return LeituraEmResposta(
+        linhas=linhas,
+        entendidas=entendidas,
+        nao_entendidas=len(linhas) - entendidas,
+    )

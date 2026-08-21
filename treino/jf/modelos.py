@@ -318,6 +318,11 @@ class Prescricao(Base):
 
     sessao: Mapped[SessaoModelo] = relationship(back_populates="prescricoes")
     exercicio: Mapped[Exercicio] = relationship()
+    series_detalhadas: Mapped[list["SerieDaPrescricao"]] = relationship(
+        back_populates="prescricao",
+        cascade="all, delete-orphan",
+        order_by="SerieDaPrescricao.ordem",
+    )
     agrupamento: Mapped[Tecnica | None] = relationship(foreign_keys=[agrupamento_id])
     tecnicas: Mapped[list[Tecnica]] = relationship(
         secondary=prescricao_tecnica, order_by="Tecnica.nome"
@@ -328,21 +333,156 @@ class Prescricao(Base):
         return (self.reps_min + self.reps_max) / 2
 
     @property
+    def tem_progressao(self) -> bool:
+        """Se as séries de trabalho diferem entre si em repetições ou carga."""
+        distintas = {
+            (serie.reps, serie.carga_kg, serie.carga_ate_kg)
+            for serie in self.series_detalhadas
+            if serie.tipo.conta_no_volume
+        }
+        return len(distintas) > 1
+
+    @property
     def tonelagem_prevista(self) -> float | None:
-        """Séries × repetições × carga. `None` quando a carga ainda não saiu.
+        """Repetições × carga somadas sobre as séries de trabalho.
 
         Mede trabalho, não força — e as duas não se substituem. Três séries de
         15 leves batem em tonelagem uma série pesada de 3 e não dizem nada
         sobre o quanto o aluno levanta.
+
+        Aquecimento e up set ficam de fora: eles sobem até a carga de trabalho,
+        e somá-los inflaria o volume sem o aluno ter treinado mais.
         """
+        if self.series_detalhadas:
+            parcelas = [s.tonelagem for s in self.series_detalhadas if s.tonelagem]
+            return sum(parcelas) if parcelas else None
+
+        # Sem séries detalhadas vale o resumo: todas as séries iguais.
         if self.carga_alvo_kg is None:
             return None
         return self.series * self.reps_medio * self.carga_alvo_kg
 
     @property
     def distorce_estimativa(self) -> bool:
-        """Se alguma técnica desta prescrição invalida a leitura de 1RM."""
-        return any(tecnica.distorce_estimativa for tecnica in self.tecnicas)
+        """Se alguma técnica invalida a leitura de 1RM — do exercício ou de
+        qualquer uma das séries."""
+        if any(tecnica.distorce_estimativa for tecnica in self.tecnicas):
+            return True
+        return any(
+            tecnica.distorce_estimativa
+            for serie in self.series_detalhadas
+            for tecnica in serie.tecnicas
+        )
 
     def __repr__(self) -> str:
         return f"<Prescricao {self.id} ex={self.exercicio_id} {self.series}x{self.reps_min}-{self.reps_max}>"
+
+
+class TipoDeSerie(str, enum.Enum):
+    """O papel da série dentro do exercício.
+
+    Separa o que é trabalho do que é preparação. Aquecimento e up set sobem até
+    a carga de trabalho e não são volume — contá-los na tonelagem inflaria o
+    número sem que o aluno tenha treinado mais.
+    """
+
+    AQUECIMENTO = "aquecimento"
+    UP_SET = "up_set"        # rampa até a carga de trabalho
+    VALIDA = "valida"        # série de trabalho
+    BACK_OFF = "back_off"    # série mais leve depois da pesada
+
+    @property
+    def conta_no_volume(self) -> bool:
+        return self in {TipoDeSerie.VALIDA, TipoDeSerie.BACK_OFF}
+
+
+serie_tecnica = Table(
+    "serie_tecnica",
+    Base.metadata,
+    Column(
+        "serie_id",
+        ForeignKey("serie_da_prescricao.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("tecnica_id", ForeignKey("tecnica.id"), primary_key=True),
+)
+
+
+class SerieDaPrescricao(Base):
+    """Uma série, com reps e carga próprias.
+
+    Existe porque a progressão dentro do exercício é a regra, não a exceção:
+    `12x20kg / 10x30kg / 8x40kg` não cabe num único "3 × 8–12 @ 30 kg". E a
+    técnica costuma ser de uma série só — no `10x100kg / 12x100kg cluster set`,
+    só a segunda é cluster.
+    """
+
+    __tablename__ = "serie_da_prescricao"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    prescricao_id: Mapped[int] = mapped_column(
+        ForeignKey("prescricao.id", ondelete="CASCADE"), index=True
+    )
+    ordem: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Nulo no up set puro ("Up set de 40 a 100kg"), que sobe a carga sem
+    # contagem fixa de repetições.
+    reps: Mapped[int | None] = mapped_column(Integer, default=None)
+
+    carga_kg: Mapped[float | None] = mapped_column(Float, default=None)
+    # Quando preenchida, a série é uma rampa: "12x50 a 92kg" vai de 50 a 92.
+    carga_ate_kg: Mapped[float | None] = mapped_column(Float, default=None)
+
+    tipo: Mapped[TipoDeSerie] = mapped_column(
+        Enum(TipoDeSerie, native_enum=False), default=TipoDeSerie.VALIDA
+    )
+    rir: Mapped[int | None] = mapped_column(Integer, default=None)
+    observacao: Mapped[str | None] = mapped_column(String(200), default=None)
+
+    prescricao: Mapped["Prescricao"] = relationship(back_populates="series_detalhadas")
+    tecnicas: Mapped[list[Tecnica]] = relationship(
+        secondary=serie_tecnica, order_by="Tecnica.nome"
+    )
+
+    @property
+    def em_rampa(self) -> bool:
+        return self.carga_ate_kg is not None
+
+    @property
+    def carga_media_kg(self) -> float | None:
+        """A carga que representa a série para efeito de volume.
+
+        Numa rampa é o ponto médio: aproximação, mas melhor do que contar só a
+        inicial (subestima) ou só a final (superestima).
+        """
+        if self.carga_kg is None:
+            return None
+        if self.carga_ate_kg is None:
+            return self.carga_kg
+        return (self.carga_kg + self.carga_ate_kg) / 2
+
+    @property
+    def tonelagem(self) -> float | None:
+        if not self.tipo.conta_no_volume:
+            return None
+        carga = self.carga_media_kg
+        if carga is None or self.reps is None:
+            return None
+        return self.reps * carga
+
+    @property
+    def serve_para_1rm(self) -> bool:
+        """Se esta série pode virar estimativa de 1RM.
+
+        Rampa não serve — a carga não é um número só. Aquecimento e up set não
+        servem porque não vão perto da falha. Técnica que quebra a contagem de
+        repetições também invalida.
+        """
+        if self.em_rampa or self.reps is None or self.carga_kg is None:
+            return False
+        if not self.tipo.conta_no_volume:
+            return False
+        return not any(tecnica.distorce_estimativa for tecnica in self.tecnicas)
+
+    def __repr__(self) -> str:
+        return f"<Serie {self.ordem} {self.reps}x{self.carga_kg}>"

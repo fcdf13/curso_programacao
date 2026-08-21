@@ -88,7 +88,10 @@ export interface Prescricao {
   exercicio: Exercicio;
   agrupamento: Tecnica | null;
   tecnicas: Tecnica[];
-  /** Séries × reps × carga. Mede trabalho, não força. */
+  /** As séries individuais, quando há progressão de carga entre elas. */
+  series_detalhadas: Serie[];
+  tem_progressao: boolean;
+  /** Reps × carga somadas nas séries de trabalho. Mede trabalho, não força. */
   tonelagem_prevista: number | null;
   distorce_estimativa: boolean;
 }
@@ -169,4 +172,55 @@ export interface RespostaDaCalculadora {
   incremento_kg: number;
   tabela: SugestaoDeCarga[];
   comparacao: Record<string, number>;
+}
+
+// -------------------------------------------------------- séries da prescrição
+
+export type TipoDeSerie = "aquecimento" | "up_set" | "valida" | "back_off";
+
+export interface Serie {
+  id: number;
+  ordem: number;
+  /** Nulo no up set puro, que sobe a carga sem contagem fixa de repetições. */
+  reps: number | null;
+  carga_kg: number | null;
+  /** Quando preenchida, a série é uma rampa: "12x50 a 92kg". */
+  carga_ate_kg: number | null;
+  tipo: TipoDeSerie;
+  rir: number | null;
+  observacao: string | null;
+  tecnicas: Tecnica[];
+  em_rampa: boolean;
+  tonelagem: number | null;
+  serve_para_1rm: boolean;
+}
+
+export interface NovaSerie {
+  ordem?: number;
+  reps?: number | null;
+  carga_kg?: number | null;
+  carga_ate_kg?: number | null;
+  tipo?: TipoDeSerie;
+  rir?: number | null;
+  observacao?: string | null;
+  tecnica_ids?: number[];
+}
+
+export interface LinhaLida {
+  texto: string;
+  entendida: boolean;
+  erro: string | null;
+  reps: number | null;
+  carga_kg: number | null;
+  carga_ate_kg: number | null;
+  tipo: TipoDeSerie;
+  observacao: string | null;
+  tecnica_ids: number[];
+  tecnicas: string[];
+}
+
+export interface Leitura {
+  linhas: LinhaLida[];
+  entendidas: number;
+  nao_entendidas: number;
 }
