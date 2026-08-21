@@ -458,3 +458,59 @@ export interface Alimento {
   gordura_100g: number | null;
   fibra_100g: number | null;
 }
+
+// ------------------------------------------------------------ treino executado
+
+export interface SerieExecutada {
+  id: number;
+  /** Gerada no aparelho. É o que torna o reenvio repetível sem duplicar. */
+  chave_local: string;
+  ordem: number;
+  exercicio_id: number;
+  prescricao_id: number | null;
+  serie_id: number | null;
+  reps: number | null;
+  carga_kg: number | null;
+  rir: number | null;
+  tipo: TipoDeSerie;
+  observacao: string | null;
+  tonelagem: number | null;
+  distorce_estimativa: boolean;
+}
+
+/** O que o celular manda. Sem `id`: quem tem identidade aqui é a chave local. */
+export interface SerieParaEnviar {
+  chave_local: string;
+  ordem: number;
+  exercicio_id: number;
+  prescricao_id?: number | null;
+  serie_id?: number | null;
+  reps: number | null;
+  carga_kg: number | null;
+  rir?: number | null;
+  tipo: TipoDeSerie;
+  observacao?: string | null;
+}
+
+export interface TreinoRealizado {
+  id: number;
+  aluno_id: number;
+  sessao_id: number | null;
+  nome: string;
+  dia: string;
+  iniciada_em: string;
+  encerrada_em: string | null;
+  encerrada: boolean;
+  observacoes: string | null;
+  tonelagem: number;
+  series: SerieExecutada[];
+}
+
+export interface TreinoNaLista {
+  id: number;
+  sessao_id: number | null;
+  nome: string;
+  dia: string;
+  encerrada: boolean;
+  tonelagem: number;
+}

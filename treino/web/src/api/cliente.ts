@@ -27,8 +27,11 @@ import type {
   QuemSouEu,
   RespostaDaCalculadora,
   SessaoModelo,
+  SerieParaEnviar,
   Tecnica,
   Termo,
+  TreinoNaLista,
+  TreinoRealizado,
 } from "./tipos";
 
 export class ErroDaApi extends Error {
@@ -132,6 +135,8 @@ export const api = {
   criarSessao: (periodizacaoId: number, dados: { nome: string; ordem?: number; dia_da_semana?: number | null }) =>
     pedir<SessaoModelo>(`/periodizacoes/${periodizacaoId}/sessoes`, comCorpo("POST", dados)),
 
+  verSessao: (id: number) => pedir<SessaoModelo>(`/sessoes/${id}`),
+
   apagarSessao: (id: number) => pedir<void>(`/sessoes/${id}`, { method: "DELETE" }),
 
   criarPrescricao: (sessaoId: number, dados: NovaPrescricao) =>
@@ -164,6 +169,38 @@ export const api = {
 
   evolucao: (alunoId: number, semanas = 26) =>
     pedir<Evolucao>(`/alunos/${alunoId}/evolucao?semanas=${semanas}`),
+
+  // --------------------------------------------------- treino executado
+
+  /** Idempotente: chamar de novo devolve o treino já aberto, não cria outro. */
+  abrirTreino: (alunoId: number, sessaoId: number, dia?: string) =>
+    pedir<TreinoRealizado>(
+      `/alunos/${alunoId}/treinos-realizados`,
+      comCorpo("POST", dia === undefined ? { sessao_id: sessaoId } : { sessao_id: sessaoId, dia }),
+    ),
+
+  listarTreinosFeitos: (alunoId: number, semanas = 12) =>
+    pedir<TreinoNaLista[]>(`/alunos/${alunoId}/treinos-realizados?semanas=${semanas}`),
+
+  verTreinoFeito: (id: number) => pedir<TreinoRealizado>(`/treinos-realizados/${id}`),
+
+  /** Manda a fila do aparelho. Só acrescenta e atualiza — nunca apaga. */
+  sincronizarSeries: (treinoId: number, series: SerieParaEnviar[]) =>
+    pedir<TreinoRealizado>(`/treinos-realizados/${treinoId}/series`, comCorpo("PUT", { series })),
+
+  apagarSerieFeita: (treinoId: number, chaveLocal: string) =>
+    pedir<void>(`/treinos-realizados/${treinoId}/series/${encodeURIComponent(chaveLocal)}`, {
+      method: "DELETE",
+    }),
+
+  encerrarTreino: (treinoId: number, observacoes: string | null) =>
+    pedir<TreinoRealizado>(
+      `/treinos-realizados/${treinoId}/encerrar`,
+      comCorpo("POST", { observacoes }),
+    ),
+
+  reabrirTreino: (treinoId: number) =>
+    pedir<TreinoRealizado>(`/treinos-realizados/${treinoId}/reabrir`, { method: "POST" }),
 
   // ------------------------------------------------------------- senha
 

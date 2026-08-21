@@ -205,14 +205,22 @@ function Treino({
               ` · ${treino.prescricoes_sem_carga} sem carga definida`}
           </p>
         </div>
-        {podeEditar && !abertoAqui && (
-          <button
-            type="button"
-            className="botao secundario"
-            onClick={() => definirEditando({ sessaoId: treino.id })}
-          >
-            Adicionar exercício
-          </button>
+        {podeEditar ? (
+          !abertoAqui && (
+            <button
+              type="button"
+              className="botao secundario"
+              onClick={() => definirEditando({ sessaoId: treino.id })}
+            >
+              Adicionar exercício
+            </button>
+          )
+        ) : (
+          treino.prescricoes.length > 0 && (
+            <Link to={`/treinar/${treino.id}`} className="botao">
+              Treinar
+            </Link>
+          )
         )}
       </div>
 

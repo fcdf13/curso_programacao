@@ -267,6 +267,7 @@
   border-left: 3px solid var(--sangue);
 }
 
-.chamada-de-checkin .botao {
+.chamada-de-checkin .botao,
+.titulo-do-treino .botao {
   text-decoration: none;
 }

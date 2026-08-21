@@ -13,6 +13,7 @@ import { FichaDoAluno } from "./rotas/FichaDoAluno";
 import { Inicio } from "./rotas/Inicio";
 import { MeusDados } from "./rotas/MeusDados";
 import { Periodizacao } from "./rotas/Periodizacao";
+import { Treinar } from "./rotas/Treinar";
 import { ProtocoloAlimentar } from "./rotas/ProtocoloAlimentar";
 import { useSessao } from "./sessao";
 import type { Papel } from "./api/tipos";
@@ -103,6 +104,14 @@ export function App() {
           element={
             <Protegido papel="aluno">
               <Dieta />
+            </Protegido>
+          }
+        />
+        <Route
+          path="/treinar/:id"
+          element={
+            <Protegido papel="aluno">
+              <Treinar />
             </Protegido>
           }
         />

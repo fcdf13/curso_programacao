@@ -5,7 +5,7 @@ registra como a semana foi, o João prescreve o treino, e os dois veem a mesma
 evolução. O plano completo está em [`PLANO.md`](PLANO.md); para publicar, veja
 [`DEPLOY.md`](DEPLOY.md).
 
-**Fases 0 a 4 estão prontas.** O aluno faz o check-in semanal e os dois veem a
+**Fases 0 a 4 estão prontas, e a 2 fechou com o modo academia.** O aluno faz o check-in semanal e os dois veem a
 evolução em gráfico; o João monta a periodização com a progressão de carga série
 a série, usa a calculadora para escolher a carga e monta o protocolo alimentar
 com os grupos de substituição — que o aluno abre no celular e marca refeição a
@@ -61,7 +61,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 412 testes
+cd treino && python3 -m pytest      # 429 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -92,8 +92,8 @@ jf/
   auth.py         senha, sessão e quem-pode-ver-o-quê
   banco.py        engine e sessão do SQLAlchemy
   esquemas.py     o que entra e sai da API (Pydantic)
-  api/            sessao · alunos · exercicios · treinos · checkins ·
-                  dieta · privacidade · calculadora
+  api/            sessao · alunos · exercicios · treinos · execucao ·
+                  checkins · dieta · privacidade · calculadora
   dados/          catálogos de exercícios e técnicas, semeadura e a
                   demonstração
   servidor.py     a API em /api e o PWA no resto
@@ -102,16 +102,17 @@ jf/
 web/
   src/estilo/     tokens da marca (preto, vermelho-sangue, osso)
   src/api/        cliente e tipos, espelhando jf/esquemas.py
+  src/api/fila.ts o que ainda não subiu, guardado em IndexedDB
   src/rotas/      Entrar · Alunos · FichaDoAluno · Periodizacao ·
                   Calculadora · Checkin · MeusDados · Inicio · Catalogo ·
-                  Dieta · ProtocoloAlimentar
+                  Dieta · ProtocoloAlimentar · Treinar
   src/componentes/EditorDePrescricao.tsx · EditorDeSeries.tsx ·
                   EditorDeProtocolo.tsx · PainelDeEvolucao.tsx ·
-                  graficos/GraficoDeLinha.tsx
+                  CronometroDeDescanso.tsx · graficos/GraficoDeLinha.tsx
   gerar-icones.py desenha os ícones do PWA a partir do monograma
 ```
 
-## Dez decisões que valem saber
+## Doze decisões que valem saber
 
 **A convenção de carga é dado de primeira classe.** Cada exercício declara se a
 carga é registrada como peso total (barra, incluindo a barra), por halter (o peso
@@ -164,6 +165,22 @@ para uma finalidade (art. 8º §4º). Um número que alguém precisa lembrar de
 incrementar acabaria esquecido, e consentimentos antigos passariam a valer para
 um texto que ninguém leu.
 
+**Sincronizar não pode duplicar nem apagar.** Subsolo de academia não tem sinal,
+então o celular grava a série primeiro em IndexedDB e só depois envia — a tela
+nunca espera a rede para confirmar. Cada série carrega uma chave gerada no
+aparelho, e a rota é um *upsert* por essa chave: mandar a mesma fila dez vezes dá
+o mesmo resultado que mandar uma. E a ausência de uma série no envio **nunca**
+vale como remoção — um aparelho que ficou offline no meio do treino tem visão
+parcial e apagaria o que foi registrado de outro lugar. A tela conta a fila junto
+com o que o servidor confirmou, mas com marca diferente: prometer "enviado"
+quando não foi é como se perde a confiança no app.
+
+**O histórico executado sobrevive ao treino que o gerou.** `SessaoRealizada`
+guarda o nome copiado e aponta para o modelo com `SET NULL`, não `CASCADE`: o
+João reorganiza a periodização, apaga um bloco de março, e a carga que o aluno
+levantou em março continua sendo verdade. É o dado mais difícil de recriar do
+app — ninguém lembra quanto puxou numa terça qualquer.
+
 **A substituição é o protocolo, não um enfeite dele.** O João não escreve "coma
 200 g de arroz", escreve "coma um carboidrato — e arroz 200 g, cuscuz 225 g e pão
 francês 2 unidades valem o mesmo". As quantidades diferem *de propósito*: é o que
@@ -201,10 +218,12 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
 - **As cópias de backup ficam no mesmo volume do banco.** O backup automático
   protege contra erro de software e engano humano; o volume inteiro se perder é
   outro risco, e levar uma cópia para fora ainda é manual (`jf backup`).
-- **A carga sugerida ainda não volta sozinha para a prescrição.** A calculadora é
-  uma tela à parte: o João lê o número e digita. Ligar as duas depende do e1RM do
-  aluno, que só existe quando ele registrar as séries executadas — fase 2 do lado
-  do aluno, ainda não feita. O campo `percentual_1rm` já está no banco esperando.
+- **A carga sugerida ainda não volta sozinha para a prescrição.** A calculadora
+  é uma tela à parte: o João lê o número e digita. Agora que o aluno registra as
+  séries executadas, o e1RM tem de onde sair — falta ligar os dois. O campo
+  `percentual_1rm` já está no banco esperando.
+- **O modo academia só abre treino que foi prescrito.** Treinar algo fora do
+  plano não tem tela; o registro parte sempre de uma sessão da periodização.
 - **`Prescricao.ordem` não é reordenável pela tela.** Os exercícios saem na ordem
   em que foram criados; as séries dentro de um exercício, sim, sobem e descem.
 - **O leitor de texto entende as séries, não o treino inteiro.** Colar
