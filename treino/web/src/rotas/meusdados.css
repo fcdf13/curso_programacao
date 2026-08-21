@@ -1,9 +1,3 @@
-.acoes {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 /* A seção que apaga tudo fica marcada, mas sem gritar: o botão vermelho já
    carrega o peso, e uma caixa inteira em alerta faria o resto da tela parecer
    menos importante do que é. */

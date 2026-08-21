@@ -186,6 +186,13 @@ textarea {
   filter: none;
 }
 
+/* Uma fileira de botões que quebra linha em tela estreita. */
+.acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 /* ----------------------------------------------------------------- avisos */
 
 .aviso {

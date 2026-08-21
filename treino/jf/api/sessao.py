@@ -6,9 +6,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from jf.auth import autenticar, usuario_atual
+from jf.auth import (
+    abrir_sessao,
+    autenticar,
+    conferir_senha,
+    trocar_senha,
+    usuario_atual,
+)
 from jf.banco import obter_sessao
-from jf.esquemas import Credenciais, QuemSouEu, UsuarioEmResposta
+from jf.esquemas import Credenciais, QuemSouEu, TrocaDeSenha, UsuarioEmResposta
 from jf.modelos import Aluno, Papel, Usuario
 
 rotas = APIRouter(tags=["sessão"])
@@ -39,17 +45,40 @@ def entrar(
             status.HTTP_401_UNAUTHORIZED, "Email ou senha incorretos."
         )
 
-    # Troca o identificador da sessão ao autenticar, para que um cookie plantado
-    # antes do login não continue valendo depois dele (fixação de sessão).
-    request.session.clear()
-    request.session["usuario_id"] = usuario.id
-
+    abrir_sessao(request, usuario)
     return _quem_sou_eu(sessao, usuario)
 
 
 @rotas.post("/sair", status_code=status.HTTP_204_NO_CONTENT)
 def sair(request: Request) -> None:
     request.session.clear()
+
+
+@rotas.post("/eu/senha", status_code=status.HTTP_204_NO_CONTENT)
+def mudar_a_propria_senha(
+    dados: TrocaDeSenha,
+    request: Request,
+    usuario: Usuario = Depends(usuario_atual),
+    sessao: Session = Depends(obter_sessao),
+) -> None:
+    """Troca a própria senha e derruba os outros aparelhos.
+
+    Reabre esta sessão no fim: quem trocou a senha continua onde estava, e todo
+    o resto cai — inclusive a sessão de quem quer que soubesse a senha antiga,
+    que é para isso que a troca serve.
+    """
+    if not conferir_senha(usuario.senha_hash, dados.senha_atual):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Senha atual incorreta.")
+
+    if dados.senha_nova == dados.senha_atual:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "A senha nova precisa ser diferente da atual.",
+        )
+
+    trocar_senha(usuario, dados.senha_nova)
+    sessao.commit()
+    abrir_sessao(request, usuario)
 
 
 @rotas.get("/eu", response_model=QuemSouEu)

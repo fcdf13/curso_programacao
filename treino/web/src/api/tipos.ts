@@ -11,6 +11,9 @@ export interface Usuario {
   nome: string;
   email: string;
   papel: Papel;
+  /** A senha foi definida por outra pessoa — o treinador cadastrou ou
+   *  redefiniu. Enquanto for `true`, ele consegue entrar como este usuário. */
+  senha_provisoria: boolean;
 }
 
 export interface QuemSouEu {

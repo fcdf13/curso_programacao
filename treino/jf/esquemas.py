@@ -32,6 +32,21 @@ class Credenciais(BaseModel):
     senha: str
 
 
+class TrocaDeSenha(BaseModel):
+    """A senha atual é pedida mesmo com a sessão aberta.
+
+    Quem senta no celular destravado de outra pessoa não deve conseguir mudar a
+    senha dela — sem isso, uma sessão emprestada vira uma conta tomada.
+    """
+
+    senha_atual: str
+    senha_nova: str = Field(min_length=TAMANHO_MINIMO_DA_SENHA, max_length=200)
+
+
+class SenhaDefinidaPeloTreinador(BaseModel):
+    senha: str = Field(min_length=TAMANHO_MINIMO_DA_SENHA, max_length=200)
+
+
 class UsuarioEmResposta(BaseModel):
     model_config = _do_orm
 
@@ -39,6 +54,9 @@ class UsuarioEmResposta(BaseModel):
     nome: str
     email: EmailStr
     papel: Papel
+    # Enquanto for `True`, outra pessoa sabe esta senha — foi ela quem a
+    # definiu. A tela usa isto para pedir a troca.
+    senha_provisoria: bool
 
 
 class QuemSouEu(BaseModel):

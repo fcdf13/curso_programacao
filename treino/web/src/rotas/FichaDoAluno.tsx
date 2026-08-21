@@ -47,6 +47,10 @@ export function FichaDoAluno() {
   const [semanas, definirSemanas] = useState("4");
   const [criando, definirCriando] = useState(false);
 
+  const [redefinindo, definirRedefinindo] = useState(false);
+  const [senhaNova, definirSenhaNova] = useState("");
+  const [avisoDaSenha, definirAvisoDaSenha] = useState<string | null>(null);
+
   const carregarBlocos = useCallback(async (alunoId: number) => {
     definirBlocos(await api.listarPeriodizacoes(alunoId));
   }, []);
@@ -81,6 +85,24 @@ export function FichaDoAluno() {
       definirErro(falha instanceof ErroDaApi ? falha.message : "Não foi possível criar.");
     } finally {
       definirCriando(false);
+    }
+  }
+
+  async function redefinirSenha() {
+    if (id === undefined) return;
+    definirAvisoDaSenha(null);
+    try {
+      await api.redefinirSenhaDoAluno(Number(id), senhaNova);
+      definirAvisoDaSenha(
+        "Senha redefinida. Passe a nova para o aluno — e diga que ele pode " +
+          "trocá-la em Meus dados, que é o que fecha o seu acesso à conta dele.",
+      );
+      definirSenhaNova("");
+      definirRedefinindo(false);
+    } catch (falha) {
+      definirAvisoDaSenha(
+        falha instanceof ErroDaApi ? falha.message : "Não foi possível redefinir.",
+      );
     }
   }
 
@@ -140,6 +162,70 @@ export function FichaDoAluno() {
       <section className="pilha">
         <h2 className="rotulo">Evolução</h2>
         <PainelDeEvolucao alunoId={Number(id)} />
+      </section>
+
+      <section className="painel pilha">
+        <div>
+          <h2 className="rotulo">Acesso do aluno</h2>
+          <p className="dica" style={{ marginTop: 6 }}>
+            Não existe "esqueci minha senha" — o app não manda email. Se o aluno
+            perdeu a senha, defina uma nova aqui e passe para ele.
+          </p>
+        </div>
+
+        {avisoDaSenha !== null && (
+          <p className="aviso certo" role="status">
+            {avisoDaSenha}
+          </p>
+        )}
+
+        {!redefinindo ? (
+          <div className="acoes">
+            <button
+              type="button"
+              className="botao secundario"
+              onClick={() => definirRedefinindo(true)}
+            >
+              Redefinir a senha
+            </button>
+          </div>
+        ) : (
+          <div className="pilha">
+            <label className="campo">
+              <span>Nova senha (mínimo de 10 caracteres)</span>
+              <input
+                value={senhaNova}
+                onChange={(evento) => definirSenhaNova(evento.target.value)}
+                autoComplete="off"
+                placeholder="a que você vai passar para ele"
+              />
+            </label>
+            <p className="dica">
+              Isto <strong>derruba as sessões abertas</strong> do aluno, e você
+              passa a conseguir entrar como ele até que ele troque.
+            </p>
+            <div className="acoes">
+              <button
+                type="button"
+                className="botao"
+                onClick={redefinirSenha}
+                disabled={senhaNova.length < 10}
+              >
+                Definir esta senha
+              </button>
+              <button
+                type="button"
+                className="botao secundario"
+                onClick={() => {
+                  definirRedefinindo(false);
+                  definirSenhaNova("");
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       <div className="painel chamada-de-checkin">

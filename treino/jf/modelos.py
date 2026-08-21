@@ -79,6 +79,18 @@ class Usuario(Base):
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
 
+    # Quando a senha mudou pela última vez. O cookie de sessão guarda o instante
+    # do login e é recusado se for anterior a isto — é o que faz "trocar a
+    # senha" derrubar os outros aparelhos, que é o motivo de se trocar a senha
+    # quando se desconfia de alguém.
+    senha_alterada_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=agora
+    )
+    # A senha foi definida por outra pessoa (o treinador cadastrou, ou
+    # redefiniu). Enquanto for `True`, ele consegue entrar como o aluno — o app
+    # diz isso ao aluno e pede que ele troque.
+    senha_provisoria: Mapped[bool] = mapped_column(Boolean, default=False)
+
     perfil: Mapped["Aluno | None"] = relationship(
         back_populates="usuario",
         foreign_keys="Aluno.usuario_id",

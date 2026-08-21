@@ -165,6 +165,16 @@ export const api = {
   evolucao: (alunoId: number, semanas = 26) =>
     pedir<Evolucao>(`/alunos/${alunoId}/evolucao?semanas=${semanas}`),
 
+  // ------------------------------------------------------------- senha
+
+  /** Derruba as sessões abertas em outros aparelhos; esta continua valendo. */
+  trocarMinhaSenha: (senhaAtual: string, senhaNova: string) =>
+    pedir<void>("/eu/senha", comCorpo("POST", { senha_atual: senhaAtual, senha_nova: senhaNova })),
+
+  /** O caminho de recuperação: sem provedor de email, quem redefine é o João. */
+  redefinirSenhaDoAluno: (alunoId: number, senha: string) =>
+    pedir<void>(`/alunos/${alunoId}/senha`, comCorpo("POST", { senha })),
+
   // ------------------------------------------------------- privacidade
 
   /** Público: dá para ler antes de aceitar, e antes de ter conta. */

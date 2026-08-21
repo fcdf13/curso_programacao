@@ -19,7 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from jf.banco import obter_sessao
-from jf.modelos import Aluno, Papel, Usuario
+from jf.modelos import Aluno, Papel, Usuario, agora
 
 _hasher = PasswordHasher()
 
@@ -65,8 +65,10 @@ def _tentativas_demais(chave: str) -> bool:
     que tenta mil senhas seguidas; não substitui um limite no proxy ou uma
     contagem compartilhada, que é o que a fase 5 precisa colocar no lugar.
     """
-    agora = time.monotonic()
-    recentes = [t for t in _tentativas[chave] if agora - t < _JANELA_SEGUNDOS]
+    # Monotônico, não relógio de parede: um acerto de horário para trás
+    # zeraria o freio no meio de um ataque.
+    momento = time.monotonic()
+    recentes = [t for t in _tentativas[chave] if momento - t < _JANELA_SEGUNDOS]
     _tentativas[chave] = recentes
     return len(recentes) >= _MAXIMO_DE_TENTATIVAS
 
@@ -109,6 +111,18 @@ def autenticar(sessao: Session, email: str, senha: str) -> Usuario | None:
 # ---------------------------------------------------------------- dependências
 
 
+def abrir_sessao(request: Request, usuario: Usuario) -> None:
+    """Marca o cookie como sendo desta pessoa, a partir de agora.
+
+    Troca o identificador da sessão, para que um cookie plantado antes do login
+    não continue valendo depois dele (fixação de sessão), e carimba o instante
+    — é o carimbo que `usuario_atual` compara com `senha_alterada_em`.
+    """
+    request.session.clear()
+    request.session["usuario_id"] = usuario.id
+    request.session["desde"] = agora().timestamp()
+
+
 def usuario_atual(
     request: Request, sessao: Session = Depends(obter_sessao)
 ) -> Usuario:
@@ -123,7 +137,31 @@ def usuario_atual(
         request.session.clear()
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sessão expirada.")
 
+    # O cookie é assinado, mas não é revogável: o servidor não guarda lista de
+    # sessões abertas. Comparar o carimbo do login com a última troca de senha é
+    # o que torna "trocar a senha" capaz de derrubar os outros aparelhos — que é
+    # o motivo pelo qual alguém troca a senha. Cookie sem carimbo é anterior a
+    # esta regra e não vale mais.
+    desde = request.session.get("desde")
+    if desde is None or desde < usuario.senha_alterada_em.timestamp():
+        request.session.clear()
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            "A senha desta conta mudou. Entre de novo.",
+        )
+
     return usuario
+
+
+def trocar_senha(usuario: Usuario, senha: str, provisoria: bool = False) -> None:
+    """Define a senha e derruba as sessões abertas em outros aparelhos.
+
+    `provisoria` é para quando quem definiu não é o dono: enquanto ela estiver
+    marcada, outra pessoa sabe a senha, e o app diz isso ao dono.
+    """
+    usuario.senha_hash = hash_de_senha(senha)
+    usuario.senha_alterada_em = agora()
+    usuario.senha_provisoria = provisoria
 
 
 def treinador_atual(usuario: Usuario = Depends(usuario_atual)) -> Usuario:

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { ReactElement } from "react";
 
+import { AvisoDeSenha } from "./componentes/AvisoDeSenha";
 import { Cabecalho } from "./componentes/Cabecalho";
 import { Alunos } from "./rotas/Alunos";
 import { Calculadora } from "./rotas/Calculadora";
@@ -52,6 +53,7 @@ export function App() {
   return (
     <>
       <Cabecalho />
+      <AvisoDeSenha />
       <Routes>
         <Route path="/entrar" element={<Entrar />} />
         <Route path="/" element={<Raiz />} />

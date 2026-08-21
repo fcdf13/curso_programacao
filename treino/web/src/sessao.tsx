@@ -13,6 +13,9 @@ interface Contexto {
   carregando: boolean;
   entrar: (email: string, senha: string) => Promise<void>;
   sair: () => Promise<void>;
+  /** Relê `/api/eu`. Serve para o que muda no servidor e a tela precisa refletir
+   *  — trocar a senha tira a marca de provisória, e o aviso some sozinho. */
+  recarregar: () => Promise<void>;
 }
 
 const SessaoContexto = createContext<Contexto | null>(null);
@@ -44,6 +47,10 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
     definirEu(await api.entrar(email, senha));
   }, []);
 
+  const recarregar = useCallback(async () => {
+    definirEu(await api.eu());
+  }, []);
+
   const sair = useCallback(async () => {
     try {
       await api.sair();
@@ -55,7 +62,7 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SessaoContexto.Provider value={{ eu, carregando, entrar, sair }}>
+    <SessaoContexto.Provider value={{ eu, carregando, entrar, sair, recarregar }}>
       {children}
     </SessaoContexto.Provider>
   );

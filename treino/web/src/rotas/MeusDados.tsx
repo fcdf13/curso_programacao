@@ -101,7 +101,7 @@ function Termo({ texto }: { texto: string }) {
 }
 
 export function MeusDados() {
-  const { eu, sair } = useSessao();
+  const { eu, sair, recarregar } = useSessao();
   const navegar = useNavigate();
 
   const [termo, definirTermo] = useState<Termo | null>(null);
@@ -113,6 +113,10 @@ export function MeusDados() {
 
   const [apagando, definirApagando] = useState(false);
   const [confirmacao, definirConfirmacao] = useState("");
+
+  const [senhaAtual, definirSenhaAtual] = useState("");
+  const [senhaNova, definirSenhaNova] = useState("");
+  const [repetida, definirRepetida] = useState("");
 
   const carregar = useCallback(async () => {
     definirEstado(await api.consentimento());
@@ -170,6 +174,19 @@ export function MeusDados() {
       link.click();
       URL.revokeObjectURL(url);
       definirAviso("Arquivo baixado.");
+    });
+
+  const trocarSenha = () =>
+    comErro(async () => {
+      await api.trocarMinhaSenha(senhaAtual, senhaNova);
+      definirSenhaAtual("");
+      definirSenhaNova("");
+      definirRepetida("");
+      // `/api/eu` volta com `senha_provisoria: false` e o aviso do topo some.
+      await recarregar();
+      definirAviso(
+        "Senha trocada. As sessões abertas em outros aparelhos foram encerradas.",
+      );
     });
 
   const apagar = () =>
@@ -249,6 +266,70 @@ export function MeusDados() {
           {lendoTermo && termo !== null && <Termo texto={termo.texto} />}
         </section>
       )}
+
+      <section className="painel pilha">
+        <div>
+          <h2 className="rotulo">Trocar a senha</h2>
+          {eu?.usuario.senha_provisoria === true ? (
+            <p className="dica" style={{ marginTop: 6 }}>
+              <strong>Esta senha foi definida por outra pessoa.</strong> Enquanto
+              você não trocá-la, quem a escolheu consegue entrar na sua conta.
+            </p>
+          ) : (
+            <p className="dica" style={{ marginTop: 6 }}>
+              Trocar a senha encerra as sessões abertas em outros aparelhos —
+              esta continua valendo.
+            </p>
+          )}
+        </div>
+
+        <label className="campo">
+          <span>Senha atual</span>
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={senhaAtual}
+            onChange={(evento) => definirSenhaAtual(evento.target.value)}
+          />
+        </label>
+        <label className="campo">
+          <span>Senha nova (mínimo de 10 caracteres)</span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={senhaNova}
+            onChange={(evento) => definirSenhaNova(evento.target.value)}
+          />
+        </label>
+        <label className="campo">
+          <span>Repita a senha nova</span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={repetida}
+            onChange={(evento) => definirRepetida(evento.target.value)}
+          />
+          {repetida !== "" && repetida !== senhaNova && (
+            <span className="dica">As duas não batem.</span>
+          )}
+        </label>
+
+        <div className="acoes">
+          <button
+            type="button"
+            className="botao"
+            onClick={trocarSenha}
+            disabled={
+              ocupado ||
+              senhaAtual === "" ||
+              senhaNova.length < 10 ||
+              senhaNova !== repetida
+            }
+          >
+            Trocar a senha
+          </button>
+        </div>
+      </section>
 
       <section className="painel pilha">
         <div>

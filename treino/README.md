@@ -61,7 +61,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 358 testes
+cd treino && python3 -m pytest      # 372 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -109,7 +109,7 @@ web/
   gerar-icones.py desenha os ícones do PWA a partir do monograma
 ```
 
-## Nove decisões que valem saber
+## Dez decisões que valem saber
 
 **A convenção de carga é dado de primeira classe.** Cada exercício declara se a
 carga é registrada como peso total (barra, incluindo a barra), por halter (o peso
@@ -148,6 +148,13 @@ duplicado viraria um degrau falso. Semana sem resposta **some** da série em vez
 de virar zero: quem não pesou não pesa zero, e uma linha caindo até o eixo seria
 mentira.
 
+**Trocar a senha derruba os outros aparelhos.** O cookie de sessão é assinado,
+mas o servidor não guarda lista de sessões abertas — então, sozinho, ele não é
+revogável, e trocar a senha não expulsaria ninguém. O login carimba o instante
+no cookie e `Usuario.senha_alterada_em` guarda a última troca; quem tiver um
+carimbo mais velho cai. É o que faz a troca servir para o motivo pelo qual
+alguém troca a senha: tirar de dentro quem sabia a antiga.
+
 **A versão do termo de consentimento é o hash do próprio texto.** Editar o
 termo muda a versão sozinho, o consentimento anterior deixa de valer, e o app
 volta a perguntar — que é o que a LGPD pede, já que o consentimento é específico
@@ -180,8 +187,11 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
 
 ## O que fica em aberto
 
-- **Troca e recuperação de senha.** Hoje o João cria a senha e passa ao aluno;
-  não há tela para trocá-la nem fluxo de "esqueci minha senha".
+- **Não há "esqueci minha senha" automático.** O app não manda email, e mandar
+  link de redefinição sem provedor configurado seria promessa que ele não
+  cumpre. Quem redefine é o João, na ficha do aluno; a senha nasce marcada como
+  provisória e o aluno é avisado, em toda tela, de que outra pessoa consegue
+  entrar na conta dele até que ele troque.
 - **Limite de tentativas de login.** O freio em `auth.py` vive na memória do
   processo: segura o roteiro ingênuo, mas não sobrevive a reinício nem cobre um
   deploy com vários workers. Precisa de um limite no proxy ou de uma contagem
