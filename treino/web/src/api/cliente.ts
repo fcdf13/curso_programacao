@@ -1,6 +1,8 @@
 /** Todas as chamadas ao backend, num lugar só. */
 
 import type {
+  Aderencia,
+  Alimento,
   Aluno,
   Checkin,
   Evolucao,
@@ -18,6 +20,10 @@ import type {
   PeriodizacaoBase,
   PeriodizacaoNaLista,
   Prescricao,
+  Protocolo,
+  ProtocoloLido,
+  ProtocoloNaLista,
+  ProtocoloNovo,
   QuemSouEu,
   RespostaDaCalculadora,
   SessaoModelo,
@@ -178,6 +184,39 @@ export const api = {
     pedir<void>(`/eu?confirmacao=${encodeURIComponent(confirmacao)}`, {
       method: "DELETE",
     }),
+
+  // -------------------------------------------------------------- dieta
+
+  /** O protocolo em vigor. 404 quando o aluno ainda não tem nenhum. */
+  protocoloDoAluno: (alunoId: number) => pedir<Protocolo>(`/alunos/${alunoId}/protocolo`),
+
+  listarProtocolos: (alunoId: number) =>
+    pedir<ProtocoloNaLista[]>(`/alunos/${alunoId}/protocolos`),
+
+  verProtocolo: (id: number) => pedir<Protocolo>(`/protocolos/${id}`),
+
+  criarProtocolo: (alunoId: number, dados: ProtocoloNovo) =>
+    pedir<Protocolo>(`/alunos/${alunoId}/protocolos`, comCorpo("POST", dados)),
+
+  /** Substitui o conteúdo inteiro: o que sai da tela sai do banco. */
+  editarProtocolo: (id: number, dados: ProtocoloNovo) =>
+    pedir<Protocolo>(`/protocolos/${id}`, comCorpo("PUT", dados)),
+
+  apagarProtocolo: (id: number) => pedir<void>(`/protocolos/${id}`, { method: "DELETE" }),
+
+  /** Lê o protocolo escrito à mão sem gravar — a tela mostra antes de salvar. */
+  lerProtocolo: (texto: string) =>
+    pedir<ProtocoloLido>("/protocolos/ler-texto", comCorpo("POST", { texto })),
+
+  listarAderencia: (alunoId: number, dias = 30) =>
+    pedir<Aderencia[]>(`/alunos/${alunoId}/aderencia?dias=${dias}`),
+
+  marcarRefeicao: (refeicaoId: number, dados: { dia?: string; seguiu: boolean }) =>
+    pedir<Aderencia>(`/refeicoes/${refeicaoId}/aderencia`, comCorpo("PUT", dados)),
+
+  /** O catálogo nasce vazio: lista vazia aqui é resposta, não falha. */
+  buscarAlimentos: (busca: string) =>
+    pedir<Alimento[]>(`/alimentos?busca=${encodeURIComponent(busca)}`),
 
   // -------------------------------------------------------- calculadora
 

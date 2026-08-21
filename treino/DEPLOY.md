@@ -123,6 +123,20 @@ fly sftp get /dados/backup.db
 Vale um cron semanal. **Ainda não existe backup automático** — é o item mais
 importante em aberto depois que o primeiro aluno real entrar.
 
+## A tabela nutricional
+
+O catálogo de alimentos nasce vazio e continua vazio até alguém carregá-lo — nada
+do protocolo alimentar depende dele, então isto é opcional:
+
+```bash
+jf importar-alimentos taco.csv                       # TACO (UNICAMP)
+jf importar-alimentos produtos.csv --fonte openfood  # Open Food Facts
+```
+
+Ele casa as colunas por apelido, então serve para as várias versões em CSV que
+circulam. Se usar o **Open Food Facts**, a licença é ODbL e **exige atribuição
+visível** na tela de quem mostra os dados.
+
 ## Migrações
 
 `jf preparar` aplica o que estiver pendente e é seguro rodar num banco já em

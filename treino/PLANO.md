@@ -76,9 +76,10 @@ RIR alvo, carga alvo, descanso, técnica), `sessao_realizada`, `serie_realizada`
 O `rir` em `serie_realizada` não é enfeite: é o que decide se a série entra ou não no
 cálculo de 1RM (ver §5).
 
-**Dieta** — `protocolo_alimentar` (kcal alvo, macros, déficit),
-`refeicao_do_protocolo`, `grupo_de_substituicao` + `item_de_substituicao`,
-`suplemento`, `registro_alimentar` (diário), `alimento` (TACO + Open Food Facts).
+**Dieta** — `protocolo_alimentar` (kcal alvo, macros, déficit), `refeicao` +
+`item_da_refeicao`, `grupo_de_substituicao` + `item_de_substituicao`,
+`suplemento`, `aderencia_da_refeicao` (o aluno marcando o que seguiu),
+`alimento` (TACO + Open Food Facts, **importado**, não embarcado).
 
 O `grupo_de_substituicao` é a modelagem direta do PDF do João — "Arroz branco 200 g ≡
 Mandioca 200 g ≡ Cuscuz 225 g ≡ Batata doce 225 g". Na tela a refeição mostra
@@ -184,9 +185,10 @@ Seguindo `app/src/componentes/graficos/`: SVG à mão, cor por token, legível n
 ## 7. Dieta
 
 - **Protocolo** — o PDF vira tela, com os grupos de substituição de §4.
-- **Base de alimentos** — TACO (UNICAMP, alimentos brasileiros, domínio público)
-  embarcada no repo; Open Food Facts por código de barras, com cache local. OFF é ODbL e
-  **exige atribuição** na tela.
+- **Base de alimentos** — TACO (UNICAMP, alimentos brasileiros, domínio público) e Open
+  Food Facts, carregadas por `jf importar-alimentos` a partir do CSV. **Não** vêm
+  embarcadas: valor nutricional precisa de procedência, e o protocolo do João não depende
+  de nenhuma das duas. OFF é ODbL e **exige atribuição** na tela de quem a usar.
 - **MyFitnessPal fica de fora.** Não existe API pública — o acesso é só para parceiros
   comerciais aprovados. O caminho honesto é importar o CSV que o MFP exporta, e isso fica
   para depois da v1.
@@ -223,7 +225,7 @@ mesmo formato de `app/src/estilo/tokens.css` — claro como base, escuro só red
 | 1 ✅ | ~~Check-in semanal + medidas + gráficos~~ | ~~Aluno registra a semana, os dois veem o gráfico~~ — feito |
 | 2 ◐ | ~~Periodização, prescrição~~ (feito), **modo academia**, registro de séries | Aluno treina lendo do celular e registra carga/reps/RIR |
 | 3 ◐ | ~~`forca.py`, carga sugerida, arredondamento~~ (feito), gráfico de e1RM | Testes do paper passam; João aceita a carga sugerida |
-| 4 | Protocolo alimentar, substituições, TACO/OFF, diário | O PDF do Filipe existe inteiro dentro do app |
+| 4 ✅ | ~~Protocolo alimentar, substituições, aderência~~ | ~~O PDF do Filipe existe inteiro dentro do app~~ — feito; a base TACO/OFF entra por importação (`jf importar-alimentos`) |
 | 5 ◐ | Painel com alertas, sincronização offline, ~~export LGPD~~ (feito), ~~empacotamento de deploy~~ (feito, ver [`DEPLOY.md`](DEPLOY.md)) | Rodando no domínio dele, com backup |
 
 **Modo academia** (fase 2) merece atenção: tela grande, botão grande, cronômetro de

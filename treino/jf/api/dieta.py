@@ -72,10 +72,14 @@ def _chave(texto: str) -> str:
 # ------------------------------------------------------------- gravação
 
 
-def _escrever(
+def escrever_protocolo(
     sessao: Session, protocolo: ProtocoloAlimentar, dados: ProtocoloBase
 ) -> None:
     """Substitui o conteúdo do protocolo pelo que veio.
+
+    Público porque a demonstração grava por aqui também: um caminho só para
+    escrever protocolo, então quebrar este caminho quebra a demonstração — que
+    é o aviso que se quer.
 
     Apagar e recriar em vez de casar item a item: os itens não têm identidade
     própria para o João — ele reescreve a lista, não edita a linha 3. O
@@ -251,7 +255,7 @@ def criar(
     protocolo = ProtocoloAlimentar(aluno_id=aluno.id, nome=dados.nome)
     sessao.add(protocolo)
     sessao.flush()
-    _escrever(sessao, protocolo, dados)
+    escrever_protocolo(sessao, protocolo, dados)
     _desativar_os_outros(sessao, aluno.id, protocolo)
     sessao.commit()
     sessao.refresh(protocolo)
@@ -265,7 +269,7 @@ def editar(
     _: Usuario = Depends(treinador_atual),
     sessao: Session = Depends(obter_sessao),
 ) -> ProtocoloAlimentar:
-    _escrever(sessao, protocolo, dados)
+    escrever_protocolo(sessao, protocolo, dados)
     _desativar_os_outros(sessao, protocolo.aluno_id, protocolo)
     sessao.commit()
     sessao.refresh(protocolo)
@@ -285,7 +289,7 @@ def apagar(
 # ---------------------------------------------------- leitura do texto
 
 
-def _rascunho(lido: ProtocoloLido, nome: str) -> ProtocoloBase:
+def rascunho_do_lido(lido: ProtocoloLido, nome: str) -> ProtocoloBase:
     return ProtocoloBase(
         nome=nome,
         deficit_kcal=lido.deficit_kcal,
@@ -350,7 +354,7 @@ def ler_texto(
     """
     lido = ler_protocolo(dados.texto)
     return ProtocoloLidoEmResposta(
-        protocolo=_rascunho(lido, dados.nome), nao_entendidas=lido.nao_entendidas
+        protocolo=rascunho_do_lido(lido, dados.nome), nao_entendidas=lido.nao_entendidas
     )
 
 

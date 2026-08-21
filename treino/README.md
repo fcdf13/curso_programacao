@@ -5,9 +5,11 @@ registra como a semana foi, o João prescreve o treino, e os dois veem a mesma
 evolução. O plano completo está em [`PLANO.md`](PLANO.md); para publicar, veja
 [`DEPLOY.md`](DEPLOY.md).
 
-**Fases 0 a 3 estão prontas.** O aluno faz o check-in semanal e os dois veem a
+**Fases 0 a 4 estão prontas.** O aluno faz o check-in semanal e os dois veem a
 evolução em gráfico; o João monta a periodização com a progressão de carga série
-a série e usa a calculadora para escolher a carga. Falta a dieta (fase 4).
+a série, usa a calculadora para escolher a carga e monta o protocolo alimentar
+com os grupos de substituição — que o aluno abre no celular e marca refeição a
+refeição.
 
 ---
 
@@ -36,8 +38,9 @@ A demonstração cria duas contas com senha conhecida:
 | treinador | `joao@jftreino.com.br` / `demonstracao-2026` |
 | aluno | `filipe@jftreino.com.br` / `demonstracao-2026` |
 
-Dentro dela já existem dez semanas de check-in e dois treinos montados, para os
-gráficos e a progressão terem o que mostrar. `jf demonstracao` se recusa a rodar
+Dentro dela já existem dez semanas de check-in, dois treinos montados e o
+protocolo alimentar completo, para os gráficos, a progressão e a dieta terem o
+que mostrar. `jf demonstracao` se recusa a rodar
 com `JF_PRODUCAO=1` e num banco que já tenha conta.
 
 Para começar do zero, sem dado de brinquedo:
@@ -58,7 +61,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 296 testes
+cd treino && python3 -m pytest      # 358 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -74,33 +77,39 @@ e só falha quando alguém troca o número na URL.
 jf/
   forca.py        a equação de 1RM e o cálculo de carga (puro, sem I/O)
   leitura.py      lê a prescrição escrita à mão (puro, sem I/O)
+  dieta_texto.py  lê o protocolo alimentar escrito à mão (puro, sem I/O)
+  alimentos.py    importa a TACO / Open Food Facts para o catálogo
   privacidade.py  o termo e a versão dele (o hash do próprio texto)
   diagnostico.py  o `jf doutor` — confere a configuração antes de subir
   migracoes/      Alembic: uma revisão por mudança de esquema
   modelos.py      Usuario, Aluno, Exercicio, Tecnica, Periodizacao,
                   SessaoModelo, Prescricao, SerieDaPrescricao,
-                  CheckinSemanal, MedidaCorporal
+                  CheckinSemanal, MedidaCorporal, Consentimento,
+                  ProtocoloAlimentar, GrupoDeSubstituicao, Refeicao,
+                  Suplemento, AderenciaDaRefeicao, Alimento
   auth.py         senha, sessão e quem-pode-ver-o-quê
   banco.py        engine e sessão do SQLAlchemy
   esquemas.py     o que entra e sai da API (Pydantic)
   api/            sessao · alunos · exercicios · treinos · checkins ·
-                  privacidade · calculadora
+                  dieta · privacidade · calculadora
   dados/          catálogos de exercícios e técnicas, semeadura e a
                   demonstração
   servidor.py     a API em /api e o PWA no resto
   cli.py          jf preparar · jf treinador · jf demonstracao ·
-                  jf doutor · jf backup · jf servir
+                  jf importar-alimentos · jf doutor · jf backup · jf servir
 web/
   src/estilo/     tokens da marca (preto, vermelho-sangue, osso)
   src/api/        cliente e tipos, espelhando jf/esquemas.py
   src/rotas/      Entrar · Alunos · FichaDoAluno · Periodizacao ·
-                  Calculadora · Checkin · MeusDados · Inicio · Catalogo
+                  Calculadora · Checkin · MeusDados · Inicio · Catalogo ·
+                  Dieta · ProtocoloAlimentar
   src/componentes/EditorDePrescricao.tsx · EditorDeSeries.tsx ·
-                  PainelDeEvolucao.tsx · graficos/GraficoDeLinha.tsx
+                  EditorDeProtocolo.tsx · PainelDeEvolucao.tsx ·
+                  graficos/GraficoDeLinha.tsx
   gerar-icones.py desenha os ícones do PWA a partir do monograma
 ```
 
-## Sete decisões que valem saber
+## Nove decisões que valem saber
 
 **A convenção de carga é dado de primeira classe.** Cada exercício declara se a
 carga é registrada como peso total (barra, incluindo a barra), por halter (o peso
@@ -146,6 +155,22 @@ para uma finalidade (art. 8º §4º). Um número que alguém precisa lembrar de
 incrementar acabaria esquecido, e consentimentos antigos passariam a valer para
 um texto que ninguém leu.
 
+**A substituição é o protocolo, não um enfeite dele.** O João não escreve "coma
+200 g de arroz", escreve "coma um carboidrato — e arroz 200 g, cuscuz 225 g e pão
+francês 2 unidades valem o mesmo". As quantidades diferem *de propósito*: é o que
+torna a troca justa. Guardar o protocolo como texto, ou guardar só o nome do
+alimento, jogaria fora exatamente a conta que ele fez. Por isso cada grupo é uma
+tabela, cada item guarda a sua porção, e o item da refeição aponta para o grupo a
+que pertence — é isso que faz o botão **Trocar** existir na tela do aluno.
+
+**O catálogo nutricional nasce vazio, e continua vazio até alguém importar.**
+Nenhum kcal ou macro vem embutido no repositório. `jf importar-alimentos` lê a
+TACO ou o Open Food Facts em CSV e casa as colunas por apelido, porque as versões
+que circulam não combinam nos cabeçalhos; `Tr` e `NA` viram `None`, não zero —
+zero é uma afirmação, "não medido" não é. Chutar macro num app que alguém usa
+para cortar peso é dano, não aproximação. **Nada do protocolo depende dessa
+tabela**: as equivalências são do João, e a dieta funciona inteira sem ela.
+
 **A equação proposta tem um piso que o paper não menciona.** O guard `k(w) ≥ 0,5`
 publicado impede a divisão por zero, mas abaixo de ~4,74 kg a equação *inverte de
 sentido*: 2 kg por 8 repetições estima 18,7 kg de 1RM e 3 kg pelas mesmas 8
@@ -180,6 +205,12 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
 - **As mensagens de validação saem em inglês.** Um peso fora da faixa devolve o
   texto padrão do Pydantic ("Input should be less than 400"), não uma frase em
   português. A tela mostra o que o servidor manda.
+- **O catálogo de alimentos não está preenchido.** O esquema, a importação e a
+  busca existem e estão testados, mas nenhuma tabela nutricional acompanha o
+  repositório — é preciso rodar `jf importar-alimentos` com a TACO ou o Open
+  Food Facts. Nada do protocolo depende disso.
+- **O protocolo não soma kcal nem macro.** Depende do catálogo acima, e um
+  total somado por cima de valores incompletos seria pior que não somar.
 - **Sem gráfico de e1RM nem de medidas.** O check-in guarda as medidas de fita,
   mas ainda não há gráfico para elas; o e1RM depende do aluno registrar as séries
   executadas, que é o lado do treino ainda não feito.

@@ -36,6 +36,7 @@ export function Cabecalho() {
           ) : (
             <>
               <NavLink to="/inicio">Início</NavLink>
+              <NavLink to="/dieta">Dieta</NavLink>
               <NavLink to="/checkin">Check-in</NavLink>
             </>
           )}

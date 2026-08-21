@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from jf.auth import hash_de_senha
 from jf.config import config
 from jf.dados import semear_tudo
+from jf.dieta_texto import ler_protocolo
 from jf.leitura import ler
 from jf.privacidade import versao_do_termo
 from jf.modelos import (
@@ -26,6 +27,7 @@ from jf.modelos import (
     FaseDaPeriodizacao,
     Papel,
     Periodizacao,
+    ProtocoloAlimentar,
     Prescricao,
     SerieDaPrescricao,
     SessaoModelo,
@@ -178,6 +180,86 @@ def _checkins(sessao: Session, aluno: Aluno) -> None:
             )
 
 
+# O protocolo alimentar sai escrito como o João escreve e passa pelo mesmo
+# leitor da tela, pela mesma gravação da API — se qualquer um dos dois quebrar,
+# a demonstração quebra junto.
+PROTOCOLO = """
+500 calorias total de déficit por dia
+
+Carboidratos substituição
+Arroz branco: 200g
+Mandioca: 200g
+Cuscuz: 225g
+Batata Doce: 225g
+Batata inglesa: 225g
+Macarrão: 225g
+Pão francês: 2 unidades
+
+Carboidratos de baixo teor molecular:
+Doce leite: 20g
+Suco de uva: 200ml
+Farinha de arroz: 50g
+
+Proteínas substituição
+Carne assada: 190g
+Frango: 200g
+Ovos: 5 und
+Peixe: 250g
+
+Frutas:
+Maçã: 1 und
+Melão: 200g
+Morango: 200g
+
+Fibras:
+Aveia: 30g
+
+Gorduras:
+Azeite: 1 colher
+
+1° refeição café
+Ovos
+Pão francês
+(Azeite)
+Legumes a gosto
+
+2° refeição almoço
+Arroz branco
+Frango
+Salada a gosto
+
+3° refeição lanche
+Aveia
+Maçã
+
+4° refeição janta
+Batata Doce
+Peixe
+Legumes a gosto
+
+5° refeição ceia
+Ovos
+Morango
+
+Suplementos:
+Multi vitaminico: dose diária
+Homega 3: 2 cps
+Ioimbina: 5mg
+"""
+
+
+def _dieta(sessao: Session, aluno: Aluno) -> None:
+    from jf.api.dieta import escrever_protocolo, rascunho_do_lido
+
+    lido = ler_protocolo(PROTOCOLO)
+    rascunho = rascunho_do_lido(lido, "Corte — protocolo 1")
+
+    protocolo = ProtocoloAlimentar(aluno_id=aluno.id, nome=rascunho.nome)
+    sessao.add(protocolo)
+    sessao.flush()
+    escrever_protocolo(sessao, protocolo, rascunho)
+
+
 def montar(sessao: Session) -> dict[str, str]:
     """Cria o treinador, um aluno e um bloco de treino com progressão."""
     if config.producao:
@@ -247,6 +329,7 @@ def montar(sessao: Session) -> dict[str, str]:
             )
 
     _checkins(sessao, aluno)
+    _dieta(sessao, aluno)
 
     sessao.commit()
 

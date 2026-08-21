@@ -1,5 +1,4 @@
-/** A ficha de um aluno. Na fase 0 mostra o perfil; check-in, treino e dieta
- *  entram como abas aqui nas fases seguintes. */
+/** A ficha de um aluno: perfil, evolução, blocos de treino e a dieta. */
 
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -142,6 +141,19 @@ export function FichaDoAluno() {
         <h2 className="rotulo">Evolução</h2>
         <PainelDeEvolucao alunoId={Number(id)} />
       </section>
+
+      <div className="painel chamada-de-checkin">
+        <div>
+          <p className="rotulo">Protocolo alimentar</p>
+          <p className="dica" style={{ marginTop: 4 }}>
+            Grupos de substituição, refeições e suplementos. Dá para colar o
+            protocolo que você já escreveu.
+          </p>
+        </div>
+        <Link to={`/alunos/${id}/dieta`} className="botao">
+          Abrir a dieta
+        </Link>
+      </div>
 
       <section className="pilha">
         <h2 className="rotulo">Blocos de treino</h2>

@@ -6,11 +6,13 @@ import { Alunos } from "./rotas/Alunos";
 import { Calculadora } from "./rotas/Calculadora";
 import { Catalogo } from "./rotas/Catalogo";
 import { Checkin } from "./rotas/Checkin";
+import { Dieta } from "./rotas/Dieta";
 import { Entrar } from "./rotas/Entrar";
 import { FichaDoAluno } from "./rotas/FichaDoAluno";
 import { Inicio } from "./rotas/Inicio";
 import { MeusDados } from "./rotas/MeusDados";
 import { Periodizacao } from "./rotas/Periodizacao";
+import { ProtocoloAlimentar } from "./rotas/ProtocoloAlimentar";
 import { useSessao } from "./sessao";
 import type { Papel } from "./api/tipos";
 
@@ -71,6 +73,14 @@ export function App() {
           }
         />
         <Route
+          path="/alunos/:id/dieta"
+          element={
+            <Protegido papel="treinador">
+              <ProtocoloAlimentar />
+            </Protegido>
+          }
+        />
+        <Route
           path="/inicio"
           element={
             <Protegido papel="aluno">
@@ -83,6 +93,14 @@ export function App() {
           element={
             <Protegido papel="aluno">
               <Checkin />
+            </Protegido>
+          }
+        />
+        <Route
+          path="/dieta"
+          element={
+            <Protegido papel="aluno">
+              <Dieta />
             </Protegido>
           }
         />

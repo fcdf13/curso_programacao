@@ -1,5 +1,4 @@
-/** A tela do aluno. Na fase 0 é a boas-vindas com o perfil; o check-in semanal
- *  ocupa este lugar na fase 1. */
+/** A tela do aluno: o treino em andamento, a dieta, o check-in e a evolução. */
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -64,8 +63,8 @@ export function Inicio() {
             <strong>Seu treino ainda não foi montado.</strong>
           </p>
           <p>
-            Assim que o João publicar o bloco, ele aparece aqui. O check-in semanal —
-            peso, sono, medidas — entra na próxima fase.
+            Assim que o João publicar o bloco, ele aparece aqui. Enquanto isso, o
+            check-in semanal e a dieta já funcionam.
           </p>
         </div>
       ) : (
@@ -83,6 +82,18 @@ export function Inicio() {
           </ul>
         </section>
       )}
+
+      <div className="painel chamada-de-checkin">
+        <div>
+          <p className="rotulo">Sua dieta</p>
+          <p className="dica" style={{ marginTop: 4 }}>
+            O que comer hoje, o que dá para trocar, e o que você já seguiu.
+          </p>
+        </div>
+        <Link to="/dieta" className="botao">
+          Ver a dieta
+        </Link>
+      </div>
 
       <div className="painel chamada-de-checkin">
         <div>

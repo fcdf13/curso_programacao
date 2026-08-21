@@ -1,0 +1,162 @@
+/* A dieta como o aluno lê: alimento à esquerda, porção à direita, troca a um
+   toque. Tudo que exige rolar de lado num celular vira o PDF no WhatsApp de
+   novo. */
+
+.metas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 4px 20px;
+}
+
+.meta-valor {
+  font-family: var(--fonte-titulo);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.refeicao {
+  padding-bottom: 12px;
+}
+
+.refeicao-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.refeicao-topo h3 {
+  font-family: var(--fonte-titulo);
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Alvo de toque grande: marcar a refeição é o gesto mais repetido da tela. */
+.marcar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.marcar:has(input:checked) {
+  border-color: var(--certo);
+  background: var(--certo-fundo);
+  color: var(--texto);
+}
+
+.marcar input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--certo);
+}
+
+.itens {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.itens > li {
+  padding: 8px 0;
+  border-top: 1px solid var(--borda);
+}
+
+.item-linha {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.item-nome {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.item-porcao {
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-suave);
+  white-space: nowrap;
+}
+
+.trocas {
+  margin: 8px 0 4px;
+  padding: 10px 12px;
+  background: var(--fundo-fundo);
+  border-radius: var(--raio-pequeno);
+}
+
+.trocas ul,
+.porcoes {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.trocas li,
+.porcoes li {
+  padding: 3px 8px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.porcoes {
+  margin-top: 8px;
+}
+
+.lista-simples {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lista-simples li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--borda);
+}
+
+.lista-simples li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* Um item da lista de protocolos anteriores: botão, porque abrir não muda a
+   URL — mas precisa parecer e responder como as outras listas. */
+.como-link {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  background: var(--fundo-painel);
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--borda-forte);
+  border-radius: var(--raio-pequeno);
+  color: var(--texto);
+  text-align: left;
+  cursor: pointer;
+}
+
+.como-link:hover {
+  border-color: var(--borda-forte);
+}

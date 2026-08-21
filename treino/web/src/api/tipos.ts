@@ -300,3 +300,158 @@ export interface MeusDados {
   consentimentos: Record<string, unknown>[];
   aluno: Record<string, unknown> | null;
 }
+
+// --------------------------------------------------------------------- dieta
+
+export interface ItemDeSubstituicao {
+  id: number;
+  descricao: string;
+  quantidade: number | null;
+  unidade: string | null;
+  /** "Cuscuz 225 g", montado no servidor — a mesma regra em toda tela. */
+  porcao: string;
+}
+
+export interface GrupoDeSubstituicao {
+  id: number;
+  nome: string;
+  ordem: number;
+  observacao: string | null;
+  itens: ItemDeSubstituicao[];
+}
+
+export interface ItemDaRefeicao {
+  id: number;
+  descricao: string | null;
+  quantidade: number | null;
+  unidade: string | null;
+  a_gosto: boolean;
+  opcional: boolean;
+  observacao: string | null;
+  /** Onde estão as substituições deste alimento; a lista já veio no protocolo. */
+  grupo_id: number | null;
+}
+
+export interface Refeicao {
+  id: number;
+  nome: string;
+  ordem: number;
+  horario: string | null;
+  observacoes: string | null;
+  itens: ItemDaRefeicao[];
+}
+
+export interface Suplemento {
+  id: number;
+  ordem: number;
+  nome: string;
+  dose: string | null;
+  momento: string | null;
+  observacao: string | null;
+}
+
+export interface Protocolo {
+  id: number;
+  aluno_id: number;
+  nome: string;
+  kcal_alvo: number | null;
+  deficit_kcal: number | null;
+  proteina_g: number | null;
+  carboidrato_g: number | null;
+  gordura_g: number | null;
+  observacoes: string | null;
+  ativo: boolean;
+  criado_em: string;
+  grupos: GrupoDeSubstituicao[];
+  refeicoes: Refeicao[];
+  suplementos: Suplemento[];
+}
+
+export interface ProtocoloNaLista {
+  id: number;
+  nome: string;
+  ativo: boolean;
+  criado_em: string;
+  kcal_alvo: number | null;
+  deficit_kcal: number | null;
+}
+
+/** O que vai para o servidor. Sem ids: o protocolo é gravado inteiro, e os
+ *  itens não têm identidade própria — o João reescreve a lista, não a linha 3. */
+export interface ItemDeSubstituicaoNovo {
+  descricao: string;
+  quantidade: number | null;
+  unidade: string | null;
+}
+
+export interface GrupoNovo {
+  nome: string;
+  observacao?: string | null;
+  itens: ItemDeSubstituicaoNovo[];
+}
+
+export interface ItemDaRefeicaoNovo {
+  descricao: string | null;
+  /** Pelo nome: quem grava tudo de uma vez ainda não tem os ids dos grupos. */
+  grupo?: string | null;
+  quantidade: number | null;
+  unidade: string | null;
+  a_gosto: boolean;
+  opcional: boolean;
+  observacao?: string | null;
+}
+
+export interface RefeicaoNova {
+  nome: string;
+  horario?: string | null;
+  observacoes?: string | null;
+  itens: ItemDaRefeicaoNovo[];
+}
+
+export interface SuplementoNovo {
+  nome: string;
+  dose: string | null;
+  momento: string | null;
+  observacao?: string | null;
+}
+
+export interface ProtocoloNovo {
+  nome: string;
+  kcal_alvo: number | null;
+  deficit_kcal: number | null;
+  proteina_g: number | null;
+  carboidrato_g: number | null;
+  gordura_g: number | null;
+  observacoes: string | null;
+  ativo: boolean;
+  grupos: GrupoNovo[];
+  refeicoes: RefeicaoNova[];
+  suplementos: SuplementoNovo[];
+}
+
+export interface ProtocoloLido {
+  protocolo: ProtocoloNovo;
+  /** O que o leitor não entendeu, para conferir antes de salvar. */
+  nao_entendidas: string[];
+}
+
+export interface Aderencia {
+  id: number;
+  refeicao_id: number;
+  dia: string;
+  seguiu: boolean;
+  observacao: string | null;
+}
+
+export interface Alimento {
+  id: number;
+  nome: string;
+  marca: string | null;
+  fonte: string;
+  /** Por 100 g. `null` é "não medido", que não é zero. */
+  kcal_100g: number | null;
+  proteina_100g: number | null;
+  carboidrato_100g: number | null;
+  gordura_100g: number | null;
+  fibra_100g: number | null;
+}
