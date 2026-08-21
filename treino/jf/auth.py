@@ -132,6 +132,25 @@ def treinador_atual(usuario: Usuario = Depends(usuario_atual)) -> Usuario:
     return usuario
 
 
+def pode_ver(usuario: Usuario, aluno: Aluno) -> bool:
+    """A regra inteira do app, num lugar só.
+
+    Tudo que pende de um aluno — periodização, treino, prescrição, check-in —
+    resolve a permissão subindo até o aluno e chamando isto aqui. Ter a regra
+    escrita duas vezes é como as duas cópias divergem.
+    """
+    if usuario.papel is Papel.TREINADOR:
+        return aluno.treinador_id == usuario.id
+    return aluno.usuario_id == usuario.id
+
+
+def exigir_acesso(usuario: Usuario, aluno: Aluno | None) -> Aluno:
+    """`pode_ver` na forma de guarda, com o 404 que não vaza existência."""
+    if aluno is None or not pode_ver(usuario, aluno):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado.")
+    return aluno
+
+
 def aluno_permitido(
     aluno_id: int,
     usuario: Usuario = Depends(usuario_atual),
@@ -143,16 +162,4 @@ def aluno_permitido(
     um 403 confirmaria que aquele id existe, o que já é informação sobre a base
     de alunos de outra pessoa.
     """
-    aluno = sessao.get(Aluno, aluno_id)
-    if aluno is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado.")
-
-    if usuario.papel is Papel.TREINADOR:
-        permitido = aluno.treinador_id == usuario.id
-    else:
-        permitido = aluno.usuario_id == usuario.id
-
-    if not permitido:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado.")
-
-    return aluno
+    return exigir_acesso(usuario, sessao.get(Aluno, aluno_id))

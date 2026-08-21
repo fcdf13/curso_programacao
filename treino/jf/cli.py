@@ -15,15 +15,16 @@ from sqlalchemy import select
 
 from jf.auth import TAMANHO_MINIMO_DA_SENHA, hash_de_senha, normalizar_email
 from jf.banco import Sessao, criar_tabelas
-from jf.dados import semear_exercicios
+from jf.dados import semear_tudo
 from jf.modelos import Papel, Usuario
 
 
 def preparar(_: argparse.Namespace) -> int:
     criar_tabelas()
+    print("Tabelas prontas.")
     with Sessao() as sessao:
-        inseridos, existiam = semear_exercicios(sessao)
-    print(f"Tabelas prontas. Catálogo: {inseridos} exercícios novos, {existiam} já estavam lá.")
+        for nome, inseridos, existiam in semear_tudo(sessao):
+            print(f"  {nome}: {inseridos} novos, {existiam} já estavam lá.")
     return 0
 
 

@@ -3,10 +3,12 @@ import type { ReactElement } from "react";
 
 import { Cabecalho } from "./componentes/Cabecalho";
 import { Alunos } from "./rotas/Alunos";
+import { Calculadora } from "./rotas/Calculadora";
 import { Catalogo } from "./rotas/Catalogo";
 import { Entrar } from "./rotas/Entrar";
 import { FichaDoAluno } from "./rotas/FichaDoAluno";
 import { Inicio } from "./rotas/Inicio";
+import { Periodizacao } from "./rotas/Periodizacao";
 import { useSessao } from "./sessao";
 import type { Papel } from "./api/tipos";
 
@@ -71,6 +73,22 @@ export function App() {
           element={
             <Protegido papel="aluno">
               <Inicio />
+            </Protegido>
+          }
+        />
+        <Route
+          path="/periodizacoes/:id"
+          element={
+            <Protegido>
+              <Periodizacao />
+            </Protegido>
+          }
+        />
+        <Route
+          path="/calculadora"
+          element={
+            <Protegido papel="treinador">
+              <Calculadora />
             </Protegido>
           }
         />

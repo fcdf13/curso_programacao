@@ -1,6 +1,21 @@
 /** Todas as chamadas ao backend, num lugar só. */
 
-import type { Aluno, Exercicio, NovoAluno, QuemSouEu } from "./tipos";
+import type {
+  Aluno,
+  Exercicio,
+  EscopoDaTecnica,
+  NovaPrescricao,
+  NovoAluno,
+  PedidoDeEstimativa,
+  Periodizacao,
+  PeriodizacaoBase,
+  PeriodizacaoNaLista,
+  Prescricao,
+  QuemSouEu,
+  RespostaDaCalculadora,
+  SessaoModelo,
+  Tecnica,
+} from "./tipos";
 
 export class ErroDaApi extends Error {
   constructor(
@@ -80,4 +95,42 @@ export const api = {
   },
 
   gruposMusculares: () => pedir<string[]>("/exercicios/grupos"),
+
+  // ------------------------------------------------------------- treino
+
+  tecnicas: (escopo?: EscopoDaTecnica) =>
+    pedir<Tecnica[]>(`/tecnicas${escopo ? `?escopo=${escopo}` : ""}`),
+
+  listarPeriodizacoes: (alunoId: number) =>
+    pedir<PeriodizacaoNaLista[]>(`/alunos/${alunoId}/periodizacoes`),
+
+  criarPeriodizacao: (alunoId: number, dados: Partial<PeriodizacaoBase>) =>
+    pedir<Periodizacao>(`/alunos/${alunoId}/periodizacoes`, comCorpo("POST", dados)),
+
+  verPeriodizacao: (id: number) => pedir<Periodizacao>(`/periodizacoes/${id}`),
+
+  editarPeriodizacao: (id: number, dados: Partial<PeriodizacaoBase>) =>
+    pedir<Periodizacao>(`/periodizacoes/${id}`, comCorpo("PATCH", dados)),
+
+  apagarPeriodizacao: (id: number) =>
+    pedir<void>(`/periodizacoes/${id}`, { method: "DELETE" }),
+
+  criarSessao: (periodizacaoId: number, dados: { nome: string; ordem?: number; dia_da_semana?: number | null }) =>
+    pedir<SessaoModelo>(`/periodizacoes/${periodizacaoId}/sessoes`, comCorpo("POST", dados)),
+
+  apagarSessao: (id: number) => pedir<void>(`/sessoes/${id}`, { method: "DELETE" }),
+
+  criarPrescricao: (sessaoId: number, dados: NovaPrescricao) =>
+    pedir<Prescricao>(`/sessoes/${sessaoId}/prescricoes`, comCorpo("POST", dados)),
+
+  editarPrescricao: (id: number, dados: NovaPrescricao) =>
+    pedir<Prescricao>(`/prescricoes/${id}`, comCorpo("PUT", dados)),
+
+  apagarPrescricao: (id: number) =>
+    pedir<void>(`/prescricoes/${id}`, { method: "DELETE" }),
+
+  // -------------------------------------------------------- calculadora
+
+  calcular: (pedido: PedidoDeEstimativa) =>
+    pedir<RespostaDaCalculadora>("/calculadora", comCorpo("POST", pedido)),
 };

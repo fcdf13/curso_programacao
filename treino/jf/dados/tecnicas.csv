@@ -1,0 +1,25 @@
+nome,escopo,distorce_estimativa,descricao
+Amplitude completa,execucao,0,Execução padrão de ponta a ponta. É a referência contra a qual as outras se comparam.
+Dead Stop,execucao,0,Pausa completa no ponto de menor tensão a cada repetição. Zera o reflexo elástico e obriga a partir da força pura.
+Cadência controlada,execucao,1,Tempo definido em cada fase (ex. 3-1-1-0). Reduz as repetições possíveis numa mesma carga.
+Slow,execucao,1,Fase excêntrica lenta (3 a 4 segundos). Aumenta o tempo sob tensão e derruba a contagem de repetições.
+Super Slow,execucao,1,Cinco a dez segundos por fase. A contagem de repetições deixa de ser comparável com série normal.
+Excêntrica acentuada,execucao,1,Carga maior ou tempo maior só na descida. A carga registrada não representa o esforço concêntrico.
+Pausa isométrica,execucao,1,Sustentação estática em algum ponto da amplitude.
+Pico de contração,execucao,1,Aperto sustentado no encurtamento máximo.
+Repetição parcial,execucao,1,Amplitude reduzida numa faixa escolhida. Permite mais repetições que a amplitude completa na mesma carga.
+Repetição forçada,execucao,1,Últimas repetições com ajuda do parceiro. A carga levantada deixa de ser só do aluno.
+Unilateral alternado,execucao,0,Um lado de cada vez. A carga continua sendo por membro.
+Série até a falha,intra_serie,0,Leva até a falha concêntrica. É exatamente o tipo de série que a estimativa de 1RM pede.
+Cluster set,intra_serie,1,Série quebrada em blocos com 10 a 30 segundos de descanso entre eles. Um cluster de 3x3 não equivale a nove repetições corridas.
+Rest-pause,intra_serie,1,Falha, 15 segundos de descanso e mais repetições na mesma carga.
+Drop-set,intra_serie,1,Falha e redução imediata da carga sem descanso. Cada trecho tem carga diferente.
+Myo-reps,intra_serie,1,Série de ativação seguida de miniséries curtas com descanso mínimo.
+Pirâmide crescente,intra_serie,1,Carga sobe e repetições caem a cada série.
+Pirâmide decrescente,intra_serie,1,Carga cai e repetições sobem a cada série.
+Série queimada,intra_serie,1,Repetições parciais rápidas depois da falha, para levar o músculo à exaustão.
+Bi-set,agrupamento,1,Dois exercícios em sequência sem descanso. O segundo chega fatigado pelo primeiro.
+Tri-set,agrupamento,1,Três exercícios em sequência sem descanso.
+Série gigante,agrupamento,1,Quatro ou mais exercícios em sequência sem descanso.
+Super-série antagonista,agrupamento,0,Dois exercícios de grupos opostos alternados. O descanso de um é o trabalho do outro, então o desempenho se mantém.
+Circuito,agrupamento,1,Estações em sequência com descanso só no fim da volta.

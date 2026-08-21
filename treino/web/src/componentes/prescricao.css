@@ -1,0 +1,148 @@
+.editor-de-prescricao {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--fundo-fundo);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio);
+  padding: 18px;
+}
+
+.editor-acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dica.destaque {
+  background: var(--sangue-fundo);
+  color: var(--sangue);
+  padding: 9px 12px;
+  border-radius: var(--raio-pequeno);
+}
+
+.tonelagem-viva {
+  margin: 0;
+  font-size: 14px;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.tonelagem-viva strong {
+  color: var(--texto);
+}
+
+.tonelagem-viva span {
+  font-size: 12.5px;
+  color: var(--texto-fraco);
+}
+
+/* ------------------------------------------------- a linha já prescrita */
+/*
+ * Duas linhas fixas em vez de um flex que quebra sozinho: a primeira carrega o
+ * que se lê na academia (exercício, séries × reps × carga), a segunda o resto.
+ * Com wrap livre os botões caíam para uma linha própria e cada exercício
+ * ocupava três vezes a altura necessária.
+ */
+
+.linha-de-prescricao {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 11px 16px;
+  background: var(--fundo-painel);
+  border-bottom: 1px solid var(--borda);
+}
+
+.linha-de-prescricao:last-child {
+  border-bottom: none;
+}
+
+/* Exercícios do mesmo bloco ganham uma barra contínua à esquerda: é o que
+   mostra, de relance, que o bi-set são dois exercícios e não um. */
+.linha-de-prescricao.em-bloco {
+  border-left: 3px solid var(--sangue);
+  padding-left: 13px;
+}
+
+.prescricao-principal {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 26px;
+}
+
+.prescricao-secundaria {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+}
+
+.prescricao-nome {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+
+/* O número que o aluno lê na academia. */
+.prescricao-carga {
+  font-family: var(--fonte-mono);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.prescricao-detalhe {
+  font-size: 12.5px;
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.prescricao-detalhe.italico {
+  font-style: italic;
+}
+
+.prescricao-acoes {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.prescricao-acoes .botao.discreto {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 12.5px;
+}
+
+.selo-de-bloco {
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sangue);
+  background: var(--sangue-fundo);
+  border-radius: 3px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Técnica que invalida a leitura de 1RM fica marcada: é a diferença entre
+   "3×9" comparável e "3×9" que não é uma série de 9 reps corridas. */
+.etiqueta.distorce {
+  border-color: var(--atencao);
+  color: var(--atencao);
+  background: var(--atencao-fundo);
+}
+
+/* No celular a carga desce para a segunda linha, junto do resto. */
+@media (max-width: 520px) {
+  .prescricao-principal {
+    flex-wrap: wrap;
+  }
+
+  .prescricao-nome {
+    flex-basis: 100%;
+  }
+}

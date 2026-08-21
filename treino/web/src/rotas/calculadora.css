@@ -1,0 +1,197 @@
+/* ------------------------------------------------------------ o resultado */
+
+.resultado {
+  background: var(--fundo-painel);
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--sangue);
+  border-radius: var(--raio);
+  padding: 22px 24px;
+}
+
+.resultado.com-ressalva {
+  border-left-color: var(--atencao);
+}
+
+.resultado-numero {
+  font-family: var(--fonte-titulo);
+  font-weight: 800;
+  font-style: italic;
+  font-size: 52px;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 4px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.resultado-numero span {
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--texto-suave);
+  letter-spacing: 0;
+}
+
+.resultado-equacao {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--texto-fraco);
+}
+
+.resultado-ressalva {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--raio-pequeno);
+  background: var(--atencao-fundo);
+  color: var(--atencao);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------- tabela de carga */
+
+.tabela-de-cargas {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 340px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabela-de-cargas th {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+  text-align: right;
+  padding: 0 0 8px 16px;
+  border-bottom: 1px solid var(--borda-forte);
+  white-space: nowrap;
+}
+
+.tabela-de-cargas th:first-child,
+.tabela-de-cargas td:first-child {
+  text-align: left;
+  padding-left: 0;
+}
+
+.tabela-de-cargas td {
+  padding: 10px 0 10px 16px;
+  border-bottom: 1px solid var(--borda);
+  text-align: right;
+  font-size: 15px;
+}
+
+.tabela-de-cargas tr:last-child td {
+  border-bottom: none;
+}
+
+.tabela-de-cargas .num {
+  font-variant-numeric: tabular-nums;
+}
+
+.tabela-de-cargas .forte {
+  font-weight: 600;
+}
+
+/* A carga exata fica discreta: quem vai para a academia usa a arredondada. */
+.tabela-de-cargas .fraco {
+  color: var(--texto-fraco);
+  font-size: 13px;
+}
+
+/* --------------------------------------------------------------- comparação */
+
+.comparacao {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--borda);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  overflow: hidden;
+}
+
+.comparacao li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 14px;
+  background: var(--fundo-painel);
+  font-size: 15px;
+}
+
+.comparacao li.usada {
+  background: var(--sangue-fundo);
+  color: var(--sangue);
+  font-weight: 600;
+}
+
+.comparacao .num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ----------------------------------------------------------------- técnicas */
+
+.tecnicas {
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  padding: 14px 16px 12px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tecnicas legend {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--texto-suave);
+  padding: 0 6px;
+}
+
+.tecnicas-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.tecnica-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid var(--borda-forte);
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--fundo-campo);
+}
+
+.tecnica-chip input {
+  /* O chip inteiro é o alvo de toque; a caixinha só existe para leitores de
+     tela e para o teclado. */
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.tecnica-chip:hover {
+  border-color: var(--texto-fraco);
+}
+
+.tecnica-chip.marcada {
+  background: var(--sangue-fundo);
+  border-color: var(--sangue);
+  color: var(--sangue);
+  font-weight: 600;
+}
+
+.tecnica-chip:focus-within {
+  outline: 2px solid var(--sangue);
+  outline-offset: 2px;
+}

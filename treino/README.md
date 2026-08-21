@@ -4,8 +4,10 @@ App de acompanhamento entre o treinador **João Filho** e seus alunos. O aluno
 registra como a semana foi, o João prescreve o treino, e os dois veem a mesma
 evolução. O plano completo está em [`PLANO.md`](PLANO.md).
 
-**Fase 0 — fundação — está pronta.** O João entra, cadastra um aluno, e o aluno
-entra. As fases seguintes (check-in, treino, calculadora, dieta) ainda não.
+**Fases 0, 2 e 3 estão prontas.** O João entra, cadastra um aluno, monta a
+periodização com séries × repetições × carga e técnicas, e usa a calculadora
+para escolher a carga. Falta o check-in semanal com gráficos (fase 1) e a dieta
+(fase 4).
 
 ---
 
@@ -33,34 +35,40 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 36 testes
+cd treino && python3 -m pytest      # 205 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
-O arquivo que mais importa é `testes/teste_permissoes.py`. Ele existe porque o
-erro que ele pega é silencioso: uma rota que esquece de filtrar por dono passa em
-todo teste feliz e só falha quando alguém troca o número na URL.
+Dois arquivos carregam o peso. `testes/teste_forca.py` confere a equação de 1RM
+contra os números publicados no paper — é o tipo de erro que não quebra nenhum
+teste de rota e sai como carga errada na academia. E `testes/teste_permissoes.py`
+existe porque uma rota que esquece de filtrar por dono passa em todo teste feliz
+e só falha quando alguém troca o número na URL.
 
 ## Como está organizado
 
 ```
 jf/
-  modelos.py      Usuario, Aluno, Exercicio
+  forca.py        a equação de 1RM e o cálculo de carga (puro, sem I/O)
+  modelos.py      Usuario, Aluno, Exercicio, Tecnica, Periodizacao,
+                  SessaoModelo, Prescricao
   auth.py         senha, sessão e quem-pode-ver-o-quê
   banco.py        engine e sessão do SQLAlchemy
   esquemas.py     o que entra e sai da API (Pydantic)
-  api/            sessao.py, alunos.py, exercicios.py
-  dados/          o catálogo de exercícios e a semeadura
+  api/            sessao · alunos · exercicios · treinos · calculadora
+  dados/          catálogos de exercícios e técnicas, e a semeadura
   servidor.py     a API em /api e o PWA no resto
   cli.py          jf preparar · jf treinador · jf servir
 web/
   src/estilo/     tokens da marca (preto, vermelho-sangue, osso)
   src/api/        cliente e tipos, espelhando jf/esquemas.py
-  src/rotas/      Entrar, Alunos, FichaDoAluno, Inicio, Catalogo
+  src/rotas/      Entrar · Alunos · FichaDoAluno · Periodizacao ·
+                  Calculadora · Inicio · Catalogo
+  src/componentes/EditorDePrescricao.tsx
   gerar-icones.py desenha os ícones do PWA a partir do monograma
 ```
 
-## Duas decisões que valem saber
+## Quatro decisões que valem saber
 
 **A convenção de carga é dado de primeira classe.** Cada exercício declara se a
 carga é registrada como peso total (barra, incluindo a barra), por halter (o peso
@@ -74,7 +82,22 @@ um 403 confirmaria que aquele id existe, o que já é informação sobre a base 
 alunos de outra pessoa. O corpo é idêntico ao de um id inexistente, e há teste
 para isso.
 
-## O que a fase 0 deixou em aberto
+**Técnica tem escopo, e o escopo muda onde ela vive.** *Dead Stop* e *Super Slow*
+descrevem como cada repetição é feita, então ficam no exercício. *Cluster set* e
+*rest-pause* mudam o que uma série é, então também ficam no exercício — mas
+marcadas como distorcendo a estimativa. *Bi-set* e *tri-set* ligam exercícios
+diferentes, então vivem no bloco, e a API recusa quem tentar informá-las como
+técnica de um exercício só. Sem essa separação não dá para saber, olhando o dado,
+se uma prescrição é um bloco ou um exercício solto.
+
+**A equação proposta tem um piso que o paper não menciona.** O guard `k(w) ≥ 0,5`
+publicado impede a divisão por zero, mas abaixo de ~4,74 kg a equação *inverte de
+sentido*: 2 kg por 8 repetições estima 18,7 kg de 1RM e 3 kg pelas mesmas 8
+estima 9,3 kg. Como cargas assim existem — elevação lateral com halter de 3 kg —,
+o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
+`jf/forca.py`, com a derivada que justifica o valor.
+
+## O que fica em aberto
 
 - **Troca e recuperação de senha.** Hoje o João cria a senha e passa ao aluno;
   não há tela para trocá-la nem fluxo de "esqueci minha senha".
@@ -82,7 +105,13 @@ para isso.
   processo: segura o roteiro ingênuo, mas não sobrevive a reinício nem cobre um
   deploy com vários workers. A fase 5 precisa de um limite no proxy ou de uma
   contagem compartilhada.
-- **Migrações.** `criar_tabelas()` só cria o que falta. A partir da fase 1, quando
-  houver dado real de aluno para preservar, entra Alembic.
+- **Migrações.** `criar_tabelas()` só cria o que falta. Quando houver dado real
+  de aluno para preservar, entra Alembic.
+- **A carga sugerida ainda não volta sozinha para a prescrição.** A calculadora é
+  uma tela à parte: o João lê o número e digita. Ligar as duas depende do e1RM do
+  aluno, que só existe quando ele registrar as séries executadas — fase 2 do lado
+  do aluno, ainda não feita. O campo `percentual_1rm` já está no banco esperando.
+- **`Prescricao.ordem` não é reordenável pela tela.** Os exercícios saem na ordem
+  em que foram criados.
 - **Consentimento LGPD, exportar e apagar os próprios dados.** Peso, sono e
   medidas são dado sensível de saúde; isso entra junto com o check-in, na fase 1.

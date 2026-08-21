@@ -176,3 +176,84 @@
     flex-basis: 100%;
   }
 }
+
+/* ------------------------------------------------------------ periodização */
+
+.resumo-do-bloco {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px 24px;
+}
+
+.resumo-valor {
+  margin: 3px 0 0;
+  font-size: 19px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.titulo-do-treino {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.titulo-do-treino h2 {
+  font-size: 19px;
+}
+
+.titulo-do-treino p {
+  margin: 3px 0 0;
+}
+
+.lista-de-prescricoes {
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  overflow: hidden;
+}
+
+.novo-treino {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.novo-treino .campo {
+  flex: 1 1 260px;
+}
+
+.lista-de-blocos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lista-de-blocos a {
+  display: flex;
+  align-items: baseline;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  background: var(--fundo-painel);
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--borda-forte);
+  border-radius: var(--raio-pequeno);
+  color: var(--texto);
+  text-decoration: none;
+}
+
+/* Só o bloco em andamento ganha a barra vermelha. */
+.lista-de-blocos a.ativa {
+  border-left-color: var(--sangue);
+}
+
+.lista-de-blocos .bloco-nome {
+  font-weight: 600;
+  flex: 1 1 auto;
+}

@@ -10,7 +10,19 @@ from __future__ import annotations
 import enum
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, Float, ForeignKey, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -125,3 +137,212 @@ class Exercicio(Base):
 
     def __repr__(self) -> str:
         return f"<Exercicio {self.id} {self.nome}>"
+
+
+# ============================================================ treino prescrito
+
+
+class EscopoDaTecnica(str, enum.Enum):
+    """Onde a técnica age. Não é taxonomia decorativa: os três escopos entram
+    na prescrição em lugares diferentes e afetam o cálculo de forma diferente.
+    """
+
+    # Como cada repetição é feita: dead stop, cadência lenta, isometria.
+    # Não muda o que "uma série de 8" significa.
+    EXECUCAO = "execucao"
+
+    # Muda o que uma série é: cluster, rest-pause, drop-set. Uma série de
+    # "9 reps" em cluster 3×3 não é comparável a 9 reps corridas.
+    INTRA_SERIE = "intra_serie"
+
+    # Liga exercícios diferentes: bi-set, tri-set, super-série, circuito.
+    # Vive no bloco, não no exercício isolado.
+    AGRUPAMENTO = "agrupamento"
+
+
+class FaseDaPeriodizacao(str, enum.Enum):
+    ACUMULACAO = "acumulacao"
+    INTENSIFICACAO = "intensificacao"
+    PICO = "pico"
+    DELOAD = "deload"
+    MANUTENCAO = "manutencao"
+
+
+class Tecnica(Base):
+    """Catálogo de técnicas. O João acrescenta as dele."""
+
+    __tablename__ = "tecnica"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    nome: Mapped[str] = mapped_column(String(60), unique=True, index=True)
+    escopo: Mapped[EscopoDaTecnica] = mapped_column(
+        Enum(EscopoDaTecnica, native_enum=False), index=True
+    )
+    descricao: Mapped[str] = mapped_column(String(300))
+
+    # Se a técnica quebra a comparabilidade da contagem de repetições, a série
+    # não serve para estimar 1RM. Um cluster 3×3 lido como "9 reps corridas"
+    # subestimaria a força de forma grosseira — e em silêncio.
+    distorce_estimativa: Mapped[bool] = mapped_column(Boolean, default=False)
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    def __repr__(self) -> str:
+        return f"<Tecnica {self.nome} ({self.escopo.value})>"
+
+
+prescricao_tecnica = Table(
+    "prescricao_tecnica",
+    Base.metadata,
+    Column(
+        "prescricao_id",
+        ForeignKey("prescricao.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("tecnica_id", ForeignKey("tecnica.id"), primary_key=True),
+)
+
+
+class Periodizacao(Base):
+    """Um mesociclo do aluno. É aqui que o João controla a calculadora."""
+
+    __tablename__ = "periodizacao"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    aluno_id: Mapped[int] = mapped_column(
+        ForeignKey("aluno.id", ondelete="CASCADE"), index=True
+    )
+    nome: Mapped[str] = mapped_column(String(120))
+    objetivo: Mapped[str | None] = mapped_column(String(200), default=None)
+    fase: Mapped[FaseDaPeriodizacao] = mapped_column(
+        Enum(FaseDaPeriodizacao, native_enum=False),
+        default=FaseDaPeriodizacao.ACUMULACAO,
+    )
+    inicio: Mapped[date | None] = mapped_column(Date, default=None)
+    semanas: Mapped[int] = mapped_column(Integer, default=4)
+
+    # Qual equação a calculadora usa neste bloco. O João escolhe, e pode
+    # comparar: é o argumento de por que a proposta é melhor que a tabela dele.
+    equacao: Mapped[str] = mapped_column(String(20), default="proposta")
+
+    ativa: Mapped[bool] = mapped_column(Boolean, default=True)
+    observacoes: Mapped[str | None] = mapped_column(Text, default=None)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+
+    aluno: Mapped[Aluno] = relationship()
+    sessoes: Mapped[list["SessaoModelo"]] = relationship(
+        back_populates="periodizacao",
+        cascade="all, delete-orphan",
+        order_by="SessaoModelo.ordem",
+    )
+
+    @property
+    def tonelagem_prevista(self) -> float:
+        """Volume de uma passagem por todos os treinos do bloco."""
+        return sum(sessao.tonelagem_prevista for sessao in self.sessoes)
+
+
+class SessaoModelo(Base):
+    """Um treino da periodização: "Treino A — peito e tríceps"."""
+
+    __tablename__ = "sessao_modelo"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    periodizacao_id: Mapped[int] = mapped_column(
+        ForeignKey("periodizacao.id", ondelete="CASCADE"), index=True
+    )
+    nome: Mapped[str] = mapped_column(String(120))
+    ordem: Mapped[int] = mapped_column(Integer, default=0)
+    # 0 = segunda … 6 = domingo. Nulo quando o treino não tem dia fixo.
+    dia_da_semana: Mapped[int | None] = mapped_column(Integer, default=None)
+    observacoes: Mapped[str | None] = mapped_column(Text, default=None)
+
+    periodizacao: Mapped[Periodizacao] = relationship(back_populates="sessoes")
+    prescricoes: Mapped[list["Prescricao"]] = relationship(
+        back_populates="sessao",
+        cascade="all, delete-orphan",
+        order_by="Prescricao.ordem",
+    )
+
+    @property
+    def tonelagem_prevista(self) -> float:
+        """Soma o que tem carga definida; prescrição sem carga entra como zero.
+
+        Somar só o que existe é melhor que devolver `None` para o treino
+        inteiro por causa de um exercício sem carga — mas a tela precisa dizer
+        quantos ficaram de fora, senão o número engana.
+        """
+        return sum(
+            p.tonelagem_prevista or 0.0 for p in self.prescricoes
+        )
+
+    @property
+    def prescricoes_sem_carga(self) -> int:
+        return sum(1 for p in self.prescricoes if p.carga_alvo_kg is None)
+
+
+class Prescricao(Base):
+    """Um exercício prescrito: séries × repetições × carga, com as técnicas."""
+
+    __tablename__ = "prescricao"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    sessao_modelo_id: Mapped[int] = mapped_column(
+        ForeignKey("sessao_modelo.id", ondelete="CASCADE"), index=True
+    )
+    exercicio_id: Mapped[int] = mapped_column(ForeignKey("exercicio.id"), index=True)
+    ordem: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Exercícios com o mesmo `bloco` são executados juntos — é assim que um
+    # bi-set vira dois registros ligados em vez de um campo de texto.
+    bloco: Mapped[str | None] = mapped_column(String(4), default=None)
+    agrupamento_id: Mapped[int | None] = mapped_column(
+        ForeignKey("tecnica.id"), default=None
+    )
+
+    series: Mapped[int] = mapped_column(Integer, default=3)
+    reps_min: Mapped[int] = mapped_column(Integer, default=8)
+    reps_max: Mapped[int] = mapped_column(Integer, default=12)
+    rir_alvo: Mapped[int | None] = mapped_column(Integer, default=2)
+    descanso_s: Mapped[int | None] = mapped_column(Integer, default=90)
+
+    # A carga vem de um dos dois: o João digita os quilos, ou dá o percentual e
+    # a calculadora resolve a partir do e1RM do aluno. `carga_alvo_kg` é sempre
+    # o valor final — inclusive quando saiu do percentual — para que a tela do
+    # aluno não dependa de recalcular nada na academia.
+    carga_alvo_kg: Mapped[float | None] = mapped_column(Float, default=None)
+    percentual_1rm: Mapped[float | None] = mapped_column(Float, default=None)
+
+    # Cadência em quatro tempos: excêntrica-pausa-concêntrica-pausa ("3-1-1-0").
+    cadencia: Mapped[str | None] = mapped_column(String(15), default=None)
+    observacao: Mapped[str | None] = mapped_column(String(300), default=None)
+
+    sessao: Mapped[SessaoModelo] = relationship(back_populates="prescricoes")
+    exercicio: Mapped[Exercicio] = relationship()
+    agrupamento: Mapped[Tecnica | None] = relationship(foreign_keys=[agrupamento_id])
+    tecnicas: Mapped[list[Tecnica]] = relationship(
+        secondary=prescricao_tecnica, order_by="Tecnica.nome"
+    )
+
+    @property
+    def reps_medio(self) -> float:
+        return (self.reps_min + self.reps_max) / 2
+
+    @property
+    def tonelagem_prevista(self) -> float | None:
+        """Séries × repetições × carga. `None` quando a carga ainda não saiu.
+
+        Mede trabalho, não força — e as duas não se substituem. Três séries de
+        15 leves batem em tonelagem uma série pesada de 3 e não dizem nada
+        sobre o quanto o aluno levanta.
+        """
+        if self.carga_alvo_kg is None:
+            return None
+        return self.series * self.reps_medio * self.carga_alvo_kg
+
+    @property
+    def distorce_estimativa(self) -> bool:
+        """Se alguma técnica desta prescrição invalida a leitura de 1RM."""
+        return any(tecnica.distorce_estimativa for tecnica in self.tecnicas)
+
+    def __repr__(self) -> str:
+        return f"<Prescricao {self.id} ex={self.exercicio_id} {self.series}x{self.reps_min}-{self.reps_max}>"

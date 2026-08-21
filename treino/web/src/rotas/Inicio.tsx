@@ -2,15 +2,18 @@
  *  ocupa este lugar na fase 1. */
 
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { api, ErroDaApi } from "../api/cliente";
-import type { Aluno } from "../api/tipos";
+import type { Aluno, PeriodizacaoNaLista } from "../api/tipos";
 import { useSessao } from "../sessao";
+import "../componentes/prescricao.css";
 import "./paginas.css";
 
 export function Inicio() {
   const { eu } = useSessao();
   const [aluno, definirAluno] = useState<Aluno | null>(null);
+  const [blocos, definirBlocos] = useState<PeriodizacaoNaLista[]>([]);
   const [erro, definirErro] = useState<string | null>(null);
 
   const alunoId = eu?.aluno_id ?? null;
@@ -25,7 +28,10 @@ export function Inicio() {
           falha instanceof ErroDaApi ? falha.message : "Não foi possível carregar.",
         ),
       );
+    api.listarPeriodizacoes(alunoId).then(definirBlocos).catch(() => definirBlocos([]));
   }, [alunoId]);
+
+  const ativos = blocos.filter((bloco) => bloco.ativa);
 
   const primeiroNome = eu?.usuario.nome.split(" ")[0] ?? "";
 
@@ -51,15 +57,31 @@ export function Inicio() {
         </div>
       )}
 
-      <div className="vazio">
-        <p>
-          <strong>Seu treino ainda não foi montado.</strong>
-        </p>
-        <p>
-          Assim que o João publicar a periodização, ela aparece aqui. O check-in semanal —
-          peso, sono, medidas — entra na próxima fase.
-        </p>
-      </div>
+      {ativos.length === 0 ? (
+        <div className="vazio">
+          <p>
+            <strong>Seu treino ainda não foi montado.</strong>
+          </p>
+          <p>
+            Assim que o João publicar o bloco, ele aparece aqui. O check-in semanal —
+            peso, sono, medidas — entra na próxima fase.
+          </p>
+        </div>
+      ) : (
+        <section className="pilha">
+          <h2 className="rotulo">Seu treino</h2>
+          <ul className="lista-de-blocos">
+            {ativos.map((bloco) => (
+              <li key={bloco.id}>
+                <Link to={`/periodizacoes/${bloco.id}`} className="ativa">
+                  <span className="bloco-nome">{bloco.nome}</span>
+                  <span className="prescricao-detalhe">{bloco.semanas} semanas</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="painel">
         <p className="rotulo">Instalar no celular</p>

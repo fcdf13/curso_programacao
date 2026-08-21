@@ -29,7 +29,10 @@ export function Cabecalho() {
 
         <nav className="cabecalho-nav">
           {ehTreinador ? (
-            <NavLink to="/alunos">Alunos</NavLink>
+            <>
+              <NavLink to="/alunos">Alunos</NavLink>
+              <NavLink to="/calculadora">Calculadora</NavLink>
+            </>
           ) : (
             <NavLink to="/inicio">Início</NavLink>
           )}
