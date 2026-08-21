@@ -224,3 +224,56 @@ export interface Leitura {
   entendidas: number;
   nao_entendidas: number;
 }
+
+// ------------------------------------------------------------------ check-in
+
+export interface Medidas {
+  cintura_cm: number | null;
+  quadril_cm: number | null;
+  torax_cm: number | null;
+  braco_cm: number | null;
+  coxa_cm: number | null;
+  panturrilha_cm: number | null;
+}
+
+export interface Checkin {
+  id: number;
+  aluno_id: number;
+  /** A segunda-feira da semana, sempre — o servidor normaliza. */
+  semana: string;
+  peso_kg: number | null;
+  horas_de_sono: number | null;
+  passos_por_dia: number | null;
+  /** 1 a 5, com 5 sempre sendo o melhor. */
+  qualidade_do_sono: number | null;
+  disposicao: number | null;
+  recuperacao: number | null;
+  aderencia_dieta: number | null;
+  aderencia_treino: number | null;
+  observacoes: string | null;
+  medidas: Medidas | null;
+}
+
+export type NovoCheckin = Partial<Omit<Checkin, "id" | "aluno_id" | "medidas">> & {
+  medidas?: Partial<Medidas> | null;
+};
+
+export interface PontoDaSerie {
+  semana: string;
+  valor: number;
+}
+
+export interface SerieDoGrafico {
+  chave: string;
+  rotulo: string;
+  unidade: string;
+  pontos: PontoDaSerie[];
+  tendencia: PontoDaSerie[];
+}
+
+export interface Evolucao {
+  aluno_id: number;
+  semanas: number;
+  series: SerieDoGrafico[];
+  variacao: Record<string, number>;
+}

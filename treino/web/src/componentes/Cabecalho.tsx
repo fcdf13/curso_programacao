@@ -34,7 +34,10 @@ export function Cabecalho() {
               <NavLink to="/calculadora">Calculadora</NavLink>
             </>
           ) : (
-            <NavLink to="/inicio">Início</NavLink>
+            <>
+              <NavLink to="/inicio">Início</NavLink>
+              <NavLink to="/checkin">Check-in</NavLink>
+            </>
           )}
           <NavLink to="/exercicios">Exercícios</NavLink>
         </nav>

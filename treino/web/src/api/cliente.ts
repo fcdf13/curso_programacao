@@ -2,12 +2,15 @@
 
 import type {
   Aluno,
+  Checkin,
+  Evolucao,
   Exercicio,
   EscopoDaTecnica,
   Leitura,
   NovaPrescricao,
   NovaSerie,
   NovoAluno,
+  NovoCheckin,
   PedidoDeEstimativa,
   Periodizacao,
   PeriodizacaoBase,
@@ -138,6 +141,20 @@ export const api = {
   /** Lê o texto escrito à mão sem gravar nada — a tela mostra antes de salvar. */
   lerTexto: (texto: string) =>
     pedir<Leitura>("/prescricoes/ler-texto", comCorpo("POST", { texto })),
+
+  // --------------------------------------------------------- check-in
+
+  listarCheckins: (alunoId: number, semanas = 52) =>
+    pedir<Checkin[]>(`/alunos/${alunoId}/checkins?semanas=${semanas}`),
+
+  registrarCheckin: (alunoId: number, dados: NovoCheckin) =>
+    pedir<Checkin>(`/alunos/${alunoId}/checkins`, comCorpo("POST", dados)),
+
+  editarCheckin: (id: number, dados: NovoCheckin) =>
+    pedir<Checkin>(`/checkins/${id}`, comCorpo("PATCH", dados)),
+
+  evolucao: (alunoId: number, semanas = 26) =>
+    pedir<Evolucao>(`/alunos/${alunoId}/evolucao?semanas=${semanas}`),
 
   // -------------------------------------------------------- calculadora
 

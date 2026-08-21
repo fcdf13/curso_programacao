@@ -1,0 +1,9 @@
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+testes/
+__pycache__/
+*.py[cod]
+*.egg-info/
+jf.db
+.pytest_cache/

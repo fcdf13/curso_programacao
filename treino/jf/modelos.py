@@ -22,6 +22,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -486,3 +487,81 @@ class SerieDaPrescricao(Base):
 
     def __repr__(self) -> str:
         return f"<Serie {self.ordem} {self.reps}x{self.carga_kg}>"
+
+
+# ============================================================ a semana do aluno
+
+
+class CheckinSemanal(Base):
+    """Como foi a semana, pela mão do aluno.
+
+    A semana é identificada pela segunda-feira (`semana`), com índice único por
+    aluno: sem isso, dois envios no mesmo domingo virariam dois check-ins da
+    mesma semana e o gráfico ganharia um degrau falso.
+    """
+
+    __tablename__ = "checkin_semanal"
+    __table_args__ = (
+        UniqueConstraint("aluno_id", "semana", name="um_checkin_por_semana"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    aluno_id: Mapped[int] = mapped_column(
+        ForeignKey("aluno.id", ondelete="CASCADE"), index=True
+    )
+    semana: Mapped[date] = mapped_column(Date, index=True)
+
+    peso_kg: Mapped[float | None] = mapped_column(Float, default=None)
+    horas_de_sono: Mapped[float | None] = mapped_column(Float, default=None)
+    passos_por_dia: Mapped[int | None] = mapped_column(Integer, default=None)
+
+    # Escalas de 1 a 5, todas na mesma direção: 5 é sempre o melhor. Ter
+    # "qualidade do sono 5 = ótimo" ao lado de "fadiga 5 = péssimo" faria o
+    # aluno responder no piloto automático e errar.
+    qualidade_do_sono: Mapped[int | None] = mapped_column(Integer, default=None)
+    disposicao: Mapped[int | None] = mapped_column(Integer, default=None)
+    recuperacao: Mapped[int | None] = mapped_column(Integer, default=None)
+
+    aderencia_dieta: Mapped[int | None] = mapped_column(Integer, default=None)
+    aderencia_treino: Mapped[int | None] = mapped_column(Integer, default=None)
+
+    observacoes: Mapped[str | None] = mapped_column(Text, default=None)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+
+    aluno: Mapped[Aluno] = relationship()
+    medidas: Mapped["MedidaCorporal | None"] = relationship(
+        back_populates="checkin", cascade="all, delete-orphan", uselist=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<Checkin {self.aluno_id} {self.semana}>"
+
+
+class MedidaCorporal(Base):
+    """Fita métrica. Opcional — muita gente mede uma vez por mês, não toda semana."""
+
+    __tablename__ = "medida_corporal"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    checkin_id: Mapped[int] = mapped_column(
+        ForeignKey("checkin_semanal.id", ondelete="CASCADE"), unique=True, index=True
+    )
+
+    cintura_cm: Mapped[float | None] = mapped_column(Float, default=None)
+    quadril_cm: Mapped[float | None] = mapped_column(Float, default=None)
+    torax_cm: Mapped[float | None] = mapped_column(Float, default=None)
+    braco_cm: Mapped[float | None] = mapped_column(Float, default=None)
+    coxa_cm: Mapped[float | None] = mapped_column(Float, default=None)
+    panturrilha_cm: Mapped[float | None] = mapped_column(Float, default=None)
+
+    checkin: Mapped[CheckinSemanal] = relationship(back_populates="medidas")
+
+    @property
+    def vazia(self) -> bool:
+        return all(
+            getattr(self, campo) is None
+            for campo in (
+                "cintura_cm", "quadril_cm", "torax_cm",
+                "braco_cm", "coxa_cm", "panturrilha_cm",
+            )
+        )

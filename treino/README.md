@@ -4,25 +4,47 @@ App de acompanhamento entre o treinador **João Filho** e seus alunos. O aluno
 registra como a semana foi, o João prescreve o treino, e os dois veem a mesma
 evolução. O plano completo está em [`PLANO.md`](PLANO.md).
 
-**Fases 0, 2 e 3 estão prontas.** O João entra, cadastra um aluno, monta a
-periodização com a progressão de carga série a série e as técnicas de cada uma,
-e usa a calculadora para escolher a carga. Falta o check-in semanal com gráficos
-(fase 1) e a dieta (fase 4).
+**Fases 0 a 3 estão prontas.** O aluno faz o check-in semanal e os dois veem a
+evolução em gráfico; o João monta a periodização com a progressão de carga série
+a série e usa a calculadora para escolher a carga. Falta a dieta (fase 4).
 
 ---
 
 ## Rodar
 
+Com Docker, um comando:
+
 ```bash
-pip install -e "treino[dev]"                    # instala o comando `jf`
-
-export JF_CHAVE_SECRETA="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
 cd treino
-jf preparar                                     # cria as tabelas e semeia 76 exercícios
-jf treinador "João Filho" joao@exemplo.com      # pede a senha sem eco
+docker compose run --rm app jf demonstracao   # opcional: banco com um treino dentro
+docker compose up --build                     # http://localhost:8770
+```
 
-cd web && npm install && npm run build && cd ..
-jf servir                                       # http://127.0.0.1:8770
+Sem Docker, também um comando (precisa de Python 3.11+ e Node 20+):
+
+```bash
+cd treino
+./comecar.sh          # instala, compila o PWA, monta a demonstração e serve
+./comecar.sh --limpo  # apaga o banco e recomeça
+```
+
+A demonstração cria duas contas com senha conhecida:
+
+| | |
+|---|---|
+| treinador | `joao@jftreino.com.br` / `demonstracao-2026` |
+| aluno | `filipe@jftreino.com.br` / `demonstracao-2026` |
+
+Dentro dela já existem dez semanas de check-in e dois treinos montados, para os
+gráficos e a progressão terem o que mostrar. `jf demonstracao` se recusa a rodar
+com `JF_PRODUCAO=1` e num banco que já tenha conta.
+
+Para começar do zero, sem dado de brinquedo:
+
+```bash
+jf preparar                                 # tabelas + catálogos
+jf treinador "João Filho" joao@exemplo.com  # pede a senha sem eco
+jf servir
 ```
 
 Para mexer no front com recarga automática, deixe `jf servir` rodando numa aba e
@@ -35,7 +57,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 244 testes
+cd treino && python3 -m pytest      # 267 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -52,24 +74,28 @@ jf/
   forca.py        a equação de 1RM e o cálculo de carga (puro, sem I/O)
   leitura.py      lê a prescrição escrita à mão (puro, sem I/O)
   modelos.py      Usuario, Aluno, Exercicio, Tecnica, Periodizacao,
-                  SessaoModelo, Prescricao, SerieDaPrescricao
+                  SessaoModelo, Prescricao, SerieDaPrescricao,
+                  CheckinSemanal, MedidaCorporal
   auth.py         senha, sessão e quem-pode-ver-o-quê
   banco.py        engine e sessão do SQLAlchemy
   esquemas.py     o que entra e sai da API (Pydantic)
-  api/            sessao · alunos · exercicios · treinos · calculadora
-  dados/          catálogos de exercícios e técnicas, e a semeadura
+  api/            sessao · alunos · exercicios · treinos · checkins ·
+                  calculadora
+  dados/          catálogos de exercícios e técnicas, semeadura e a
+                  demonstração
   servidor.py     a API em /api e o PWA no resto
   cli.py          jf preparar · jf treinador · jf servir
 web/
   src/estilo/     tokens da marca (preto, vermelho-sangue, osso)
   src/api/        cliente e tipos, espelhando jf/esquemas.py
   src/rotas/      Entrar · Alunos · FichaDoAluno · Periodizacao ·
-                  Calculadora · Inicio · Catalogo
-  src/componentes/EditorDePrescricao.tsx · EditorDeSeries.tsx
+                  Calculadora · Checkin · Inicio · Catalogo
+  src/componentes/EditorDePrescricao.tsx · EditorDeSeries.tsx ·
+                  PainelDeEvolucao.tsx · graficos/GraficoDeLinha.tsx
   gerar-icones.py desenha os ícones do PWA a partir do monograma
 ```
 
-## Cinco decisões que valem saber
+## Seis decisões que valem saber
 
 **A convenção de carga é dado de primeira classe.** Cada exercício declara se a
 carga é registrada como peso total (barra, incluindo a barra), por halter (o peso
@@ -100,6 +126,14 @@ aquecimento e up set sobem até a carga de trabalho e **não entram na tonelagem
 porque somá-los inflaria o volume sem o aluno ter treinado mais. Quando todas as
 séries são iguais, o resumo da prescrição continua bastando.
 
+**A semana do check-in é sempre a segunda-feira.** O servidor normaliza qualquer
+data para a segunda correspondente, e um índice único por `(aluno, semana)`
+impede dois check-ins da mesma semana — sem isso, quem responde no domingo e
+quem responde na terça cairiam em linhas diferentes do gráfico, e um envio
+duplicado viraria um degrau falso. Semana sem resposta **some** da série em vez
+de virar zero: quem não pesou não pesa zero, e uma linha caindo até o eixo seria
+mentira.
+
 **A equação proposta tem um piso que o paper não menciona.** O guard `k(w) ≥ 0,5`
 publicado impede a divisão por zero, mas abaixo de ~4,74 kg a equação *inverte de
 sentido*: 2 kg por 8 repetições estima 18,7 kg de 1RM e 3 kg pelas mesmas 8
@@ -128,4 +162,12 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
   casar "Cadeira abdutora vermelha" com o catálogo pede busca aproximada. As
   linhas que ele não entende voltam com o motivo, em vez de sumirem.
 - **Consentimento LGPD, exportar e apagar os próprios dados.** Peso, sono e
-  medidas são dado sensível de saúde; isso entra junto com o check-in, na fase 1.
+  medidas são dado sensível de saúde e já estão sendo guardados; o consentimento
+  no cadastro e o botão de exportar/apagar ainda não existem. É a dívida mais
+  urgente antes de qualquer aluno real entrar.
+- **As mensagens de validação saem em inglês.** Um peso fora da faixa devolve o
+  texto padrão do Pydantic ("Input should be less than 400"), não uma frase em
+  português. A tela mostra o que o servidor manda.
+- **Sem gráfico de e1RM nem de medidas.** O check-in guarda as medidas de fita,
+  mas ainda não há gráfico para elas; o e1RM depende do aluno registrar as séries
+  executadas, que é o lado do treino ainda não feito.

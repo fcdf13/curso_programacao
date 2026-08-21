@@ -257,3 +257,16 @@
   font-weight: 600;
   flex: 1 1 auto;
 }
+
+.chamada-de-checkin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-left: 3px solid var(--sangue);
+}
+
+.chamada-de-checkin .botao {
+  text-decoration: none;
+}

@@ -1,7 +1,8 @@
 """Linha de comando: preparar o banco, criar o treinador, subir o servidor.
 
-    jf preparar                    cria as tabelas e semeia o catálogo
+    jf preparar                    cria as tabelas e semeia os catálogos
     jf treinador "João Filho" joao@exemplo.com
+    jf demonstracao                banco de brinquedo, com treino dentro
     jf servir
 """
 
@@ -62,6 +63,24 @@ def criar_treinador(argumentos: argparse.Namespace) -> int:
     return 0
 
 
+def demonstracao(_: argparse.Namespace) -> int:
+    from jf.dados.demonstracao import DemonstracaoRecusada, montar
+
+    criar_tabelas()
+    with Sessao() as sessao:
+        try:
+            contas = montar(sessao)
+        except DemonstracaoRecusada as motivo:
+            print(motivo, file=sys.stderr)
+            return 1
+
+    print("Demonstração pronta. Entre com:")
+    print(f"  treinador  {contas['treinador']}")
+    print(f"  aluno      {contas['aluno']}")
+    print("\nAgora rode `jf servir`.")
+    return 0
+
+
 def servir(argumentos: argparse.Namespace) -> int:
     from jf.servidor import servir as subir
 
@@ -87,6 +106,10 @@ def main(argv: list[str] | None = None) -> int:
         help="informe para uso não interativo; sem isto a senha é pedida sem eco",
     )
     treinador.set_defaults(funcao=criar_treinador)
+
+    comandos.add_parser(
+        "demonstracao", help="cria um banco de brinquedo com um treino dentro"
+    ).set_defaults(funcao=demonstracao)
 
     servidor = comandos.add_parser("servir", help="sobe a API e o app")
     servidor.add_argument("--host", default="127.0.0.1")

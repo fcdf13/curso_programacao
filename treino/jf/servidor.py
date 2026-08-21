@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from jf.api import alunos, calculadora, exercicios, sessao, treinos
+from jf.api import alunos, calculadora, checkins, exercicios, sessao, treinos
 from jf.config import RAIZ, config
 
 WEB = RAIZ / "web" / "dist"
@@ -42,6 +42,7 @@ def criar_app() -> FastAPI:
     api.include_router(alunos.rotas)
     api.include_router(exercicios.rotas)
     api.include_router(treinos.rotas)
+    api.include_router(checkins.rotas)
     api.include_router(calculadora.rotas)
     # Depois de todas as rotas: o que se registra num router após a inclusão
     # não entra no app.

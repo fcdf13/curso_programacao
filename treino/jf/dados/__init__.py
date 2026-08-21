@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Callable
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -70,6 +70,14 @@ def semear_tecnicas(sessao: Session) -> tuple[int, int]:
     )
 
 
-def semear_tudo(sessao: Session) -> Iterable[tuple[str, int, int]]:
-    yield ("exercícios", *semear_exercicios(sessao))
-    yield ("técnicas", *semear_tecnicas(sessao))
+def semear_tudo(sessao: Session) -> list[tuple[str, int, int]]:
+    """Semeia todos os catálogos e diz o que inseriu.
+
+    Devolve uma lista, e não um gerador: gerador só faz o trabalho quando é
+    consumido, e `semear_tudo(sessao)` sozinho — que é como se escreve sem
+    pensar — não semearia nada e não daria erro nenhum.
+    """
+    return [
+        ("exercícios", *semear_exercicios(sessao)),
+        ("técnicas", *semear_tecnicas(sessao)),
+    ]

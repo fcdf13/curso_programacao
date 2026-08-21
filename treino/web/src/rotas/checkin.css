@@ -1,0 +1,85 @@
+.escala {
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  padding: 12px 14px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.escala legend {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--texto-suave);
+  padding: 0 6px;
+}
+
+.escala-notas {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* As pontas nomeadas existem para o 5 não virar adivinhação: sem elas, "5" em
+   recuperação tanto podia ser recuperado quanto destruído. */
+.escala-ponta {
+  font-size: 11.5px;
+  color: var(--texto-fraco);
+  white-space: nowrap;
+}
+
+.nota {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 44px é o alvo de toque confortável; o aluno responde isso no celular. */
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-pequeno);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  background: var(--fundo-campo);
+}
+
+.nota input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.nota:hover {
+  border-color: var(--texto-fraco);
+}
+
+.nota.marcada {
+  background: var(--sangue-fundo);
+  border-color: var(--sangue);
+  color: var(--sangue);
+}
+
+.nota:focus-within {
+  outline: 2px solid var(--sangue);
+  outline-offset: 2px;
+}
+
+.acoes-do-checkin {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 520px) {
+  .escala-ponta {
+    flex-basis: 100%;
+  }
+
+  .escala-ponta:last-child {
+    text-align: right;
+  }
+}

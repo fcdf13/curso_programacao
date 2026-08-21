@@ -1,0 +1,188 @@
+/* Gráficos: marcas finas, grade recessiva, cor presa aos tokens do tema.
+ *
+ * Uma série por gráfico, então não há paleta categórica aqui — o título nomeia
+ * o dado. A única exceção é o peso, que traz o ponto da semana ao lado da média
+ * móvel; ali as duas marcas se separam por forma antes de se separarem por cor.
+ */
+
+.grafico {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grafico figcaption {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.grafico figcaption h3 {
+  font-family: var(--fonte-titulo);
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.grafico-unidade {
+  font-size: 12px;
+  color: var(--texto-fraco);
+}
+
+.grafico-legenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--texto-fraco);
+}
+
+.marca-linha {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--sangue);
+}
+
+.marca-ponto {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--texto-fraco);
+  margin-left: 8px;
+}
+
+.grafico-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  touch-action: pan-y;
+}
+
+/* Hairline e sólida: tracejado vira ruído e compete com o dado. */
+.grade {
+  stroke: var(--borda);
+  stroke-width: 1;
+}
+
+.eixo {
+  fill: var(--texto-fraco);
+  font-size: 10.5px;
+  font-family: var(--fonte-mono);
+}
+
+.linha {
+  fill: none;
+  stroke: var(--sangue);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.ponto {
+  fill: var(--sangue);
+  /* O anel na cor da superfície mantém o ponto legível onde ele cruza a linha. */
+  stroke: var(--fundo-painel);
+  stroke-width: 2;
+  transition: r 0.1s ease;
+}
+
+/* Com média móvel presente, o ponto da semana é o dado bruto: recua. */
+.ponto.cru {
+  fill: var(--texto-fraco);
+}
+
+.ponto.ativo {
+  fill: var(--sangue);
+}
+
+.cursor {
+  stroke: var(--borda-forte);
+  stroke-width: 1;
+}
+
+.grafico-leitura {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+  min-height: 1.4em;
+}
+
+.grafico-leitura strong {
+  color: var(--texto);
+}
+
+/* ------------------------------------------------------------ os cartões */
+
+.grade-de-graficos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.cartao-de-grafico {
+  background: var(--fundo-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 16px;
+}
+
+/* O peso é o gráfico principal: ocupa a linha inteira quando cabe. */
+.cartao-de-grafico.largo {
+  grid-column: 1 / -1;
+}
+
+/* ---------------------------------------------------------- os indicadores */
+
+.placas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  /* Fundo do painel, não da borda: com `gap` sobre um fundo de borda, a célula
+     que sobra na última fila apareceria como um cartão vazio. As divisórias
+     vêm de cada placa. */
+  background: var(--fundo-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+}
+
+.placa {
+  padding: 14px 16px;
+  box-shadow:
+    1px 0 0 var(--borda),
+    0 1px 0 var(--borda);
+}
+
+.placa-unidade {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto-fraco);
+}
+
+.placa-valor {
+  font-family: var(--fonte-titulo);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 3px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.placa-variacao {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-fraco);
+}
+
+/* Subiu e desceu não são bom e ruim: peso caindo num corte é o objetivo, e
+   sono caindo não é. Quem interpreta é o João, então a seta é neutra. */
+.placa-variacao .seta {
+  font-family: var(--fonte-mono);
+  color: var(--texto-suave);
+}

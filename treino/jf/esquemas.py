@@ -6,7 +6,7 @@ viram JSON direto, sempre passam por aqui.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -362,3 +362,101 @@ class LeituraEmResposta(BaseModel):
 
 
 PrescricaoEmResposta.model_rebuild()
+
+
+# ------------------------------------------------------------------ check-in
+
+
+def _segunda(dia: date) -> date:
+    """A segunda-feira da semana de `dia`.
+
+    Toda semana é identificada pela segunda: assim o aluno que preenche no
+    domingo e o que preenche na terça caem na mesma linha do gráfico.
+    """
+    return dia - timedelta(days=dia.weekday())
+
+
+class MedidasBase(BaseModel):
+    cintura_cm: float | None = Field(default=None, gt=20, lt=250)
+    quadril_cm: float | None = Field(default=None, gt=20, lt=250)
+    torax_cm: float | None = Field(default=None, gt=20, lt=250)
+    braco_cm: float | None = Field(default=None, gt=10, lt=100)
+    coxa_cm: float | None = Field(default=None, gt=10, lt=150)
+    panturrilha_cm: float | None = Field(default=None, gt=10, lt=100)
+
+
+class MedidasEmResposta(MedidasBase):
+    model_config = _do_orm
+
+
+class CheckinBase(BaseModel):
+    semana: date | None = None
+
+    peso_kg: float | None = Field(default=None, gt=20, lt=400)
+    horas_de_sono: float | None = Field(default=None, ge=0, le=16)
+    passos_por_dia: int | None = Field(default=None, ge=0, le=100_000)
+
+    # 1 a 5, sempre com 5 = melhor.
+    qualidade_do_sono: int | None = Field(default=None, ge=1, le=5)
+    disposicao: int | None = Field(default=None, ge=1, le=5)
+    recuperacao: int | None = Field(default=None, ge=1, le=5)
+
+    aderencia_dieta: int | None = Field(default=None, ge=0, le=100)
+    aderencia_treino: int | None = Field(default=None, ge=0, le=100)
+
+    observacoes: str | None = None
+    medidas: MedidasBase | None = None
+
+    @model_validator(mode="after")
+    def normalizar_semana(self) -> "CheckinBase":
+        # Sem `object.__setattr__` porque o modelo não é frozen; a semana
+        # sempre vira a segunda-feira correspondente, mesmo se vier outro dia.
+        self.semana = _segunda(self.semana or date.today())
+        return self
+
+
+class NovoCheckin(CheckinBase):
+    pass
+
+
+class CheckinEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    aluno_id: int
+    semana: date
+    peso_kg: float | None
+    horas_de_sono: float | None
+    passos_por_dia: int | None
+    qualidade_do_sono: int | None
+    disposicao: int | None
+    recuperacao: int | None
+    aderencia_dieta: int | None
+    aderencia_treino: int | None
+    observacoes: str | None
+    medidas: MedidasEmResposta | None
+
+
+# ------------------------------------------------------------------ evolução
+
+
+class PontoDaSerie(BaseModel):
+    semana: date
+    valor: float
+
+
+class SerieDoGrafico(BaseModel):
+    chave: str
+    rotulo: str
+    unidade: str
+    pontos: list[PontoDaSerie]
+    # Média móvel de 4 semanas do peso: a tendência é o dado, o ponto é ruído.
+    tendencia: list[PontoDaSerie] = Field(default_factory=list)
+
+
+class Evolucao(BaseModel):
+    aluno_id: int
+    semanas: int
+    series: list[SerieDoGrafico]
+    # O que mudou entre o primeiro e o último check-in, por série.
+    variacao: dict[str, float]

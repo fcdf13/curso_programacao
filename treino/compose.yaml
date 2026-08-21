@@ -1,0 +1,22 @@
+# Sobe o app inteiro num comando:
+#
+#     docker compose up --build        →  http://localhost:8770
+#
+# Para começar com um treino dentro, antes de subir:
+#
+#     docker compose run --rm app jf demonstracao
+
+services:
+  app:
+    build: .
+    ports:
+      - "8770:8770"
+    environment:
+      # Chave fixa para a sessão sobreviver a um restart do contêiner. Em
+      # produção, troque por uma sorteada e mantida fora do repositório.
+      JF_CHAVE_SECRETA: "desenvolvimento-local-nao-usar-em-producao"
+    volumes:
+      - banco:/dados
+
+volumes:
+  banco:

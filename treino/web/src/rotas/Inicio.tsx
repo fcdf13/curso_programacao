@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 
 import { api, ErroDaApi } from "../api/cliente";
 import type { Aluno, PeriodizacaoNaLista } from "../api/tipos";
+import { PainelDeEvolucao } from "../componentes/PainelDeEvolucao";
 import { useSessao } from "../sessao";
 import "../componentes/prescricao.css";
 import "./paginas.css";
@@ -80,6 +81,25 @@ export function Inicio() {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      <div className="painel chamada-de-checkin">
+        <div>
+          <p className="rotulo">Esta semana</p>
+          <p className="dica" style={{ marginTop: 4 }}>
+            Peso, sono e como o corpo respondeu. Leva um minuto.
+          </p>
+        </div>
+        <Link to="/checkin" className="botao">
+          Fazer o check-in
+        </Link>
+      </div>
+
+      {alunoId !== null && (
+        <section className="pilha">
+          <h2 className="rotulo">Sua evolução</h2>
+          <PainelDeEvolucao alunoId={alunoId} />
         </section>
       )}
 

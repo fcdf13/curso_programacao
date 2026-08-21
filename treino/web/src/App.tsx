@@ -5,6 +5,7 @@ import { Cabecalho } from "./componentes/Cabecalho";
 import { Alunos } from "./rotas/Alunos";
 import { Calculadora } from "./rotas/Calculadora";
 import { Catalogo } from "./rotas/Catalogo";
+import { Checkin } from "./rotas/Checkin";
 import { Entrar } from "./rotas/Entrar";
 import { FichaDoAluno } from "./rotas/FichaDoAluno";
 import { Inicio } from "./rotas/Inicio";
@@ -73,6 +74,14 @@ export function App() {
           element={
             <Protegido papel="aluno">
               <Inicio />
+            </Protegido>
+          }
+        />
+        <Route
+          path="/checkin"
+          element={
+            <Protegido papel="aluno">
+              <Checkin />
             </Protegido>
           }
         />
