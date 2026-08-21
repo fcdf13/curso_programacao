@@ -546,3 +546,20 @@ export interface CargaSugerida {
   confiavel: boolean;
   ressalva: string | null;
 }
+
+// -------------------------------------------------------------------- alertas
+
+export interface AlertaDoAluno {
+  tipo: string;
+  /** 3 = grave, 2 = atenção, 1 = a acompanhar. */
+  gravidade: number;
+  mensagem: string;
+}
+
+export interface AlunoComAlertas {
+  aluno_id: number;
+  nome: string;
+  objetivo: string | null;
+  alertas: AlertaDoAluno[];
+  pontuacao: number;
+}

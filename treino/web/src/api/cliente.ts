@@ -4,6 +4,7 @@ import type {
   Aderencia,
   Alimento,
   Aluno,
+  AlunoComAlertas,
   CargaSugerida,
   Checkin,
   Evolucao,
@@ -216,6 +217,9 @@ export const api = {
   /** O ciclo fechando: a carga que sai do e1RM para as prescrições com %1RM. */
   cargasSugeridas: (sessaoId: number) =>
     pedir<CargaSugerida[]>(`/sessoes/${sessaoId}/cargas-sugeridas`),
+
+  /** Os alunos do treinador, ordenados por quem precisa de atenção primeiro. */
+  alertasDosAlunos: () => pedir<AlunoComAlertas[]>("/alunos/alertas"),
 
   // ------------------------------------------------------------- senha
 

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import date, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from jf.alertas import avaliar, pontuacao
 from jf.auth import (
     aluno_permitido,
     consentimento_em_dia,
@@ -17,12 +20,20 @@ from jf.auth import (
 )
 from jf.banco import obter_sessao
 from jf.esquemas import (
+    AlertaEmResposta,
+    AlunoComAlertas,
     AlunoEmResposta,
     EdicaoDoAluno,
     NovoAluno,
     SenhaDefinidaPeloTreinador,
 )
-from jf.modelos import Aluno, Papel, Usuario
+from jf.modelos import (
+    Aluno,
+    CheckinSemanal,
+    Papel,
+    ProtocoloAlimentar,
+    Usuario,
+)
 
 rotas = APIRouter(prefix="/alunos", tags=["alunos"])
 
@@ -94,6 +105,98 @@ def cadastrar(
 
     sessao.refresh(aluno)
     return resposta(aluno)
+
+
+@rotas.get("/alertas", response_model=list[AlunoComAlertas])
+def alertas(
+    treinador: Usuario = Depends(treinador_atual),
+    sessao: Session = Depends(obter_sessao),
+) -> list[AlunoComAlertas]:
+    """Os alunos do João, ordenados por quem precisa de atenção primeiro.
+
+    Antes de `/{aluno_id}` de propósito: sem isso, `/alunos/alertas` seria
+    interpretado como `aluno_id="alertas"` e devolveria 404.
+    """
+    from jf.api.execucao import resumo_de_forca
+
+    hoje = date.today()
+    janela_de_peso = timedelta(weeks=8)
+    resultado = []
+
+    alunos = sessao.scalars(
+        select(Aluno)
+        .where(Aluno.treinador_id == treinador.id)
+        .join(Aluno.usuario)
+        .order_by(Usuario.nome)
+    ).all()
+
+    for aluno in alunos:
+        checkins = list(
+            sessao.scalars(
+                select(CheckinSemanal)
+                .where(CheckinSemanal.aluno_id == aluno.id)
+                .where(CheckinSemanal.semana >= hoje - janela_de_peso)
+                .order_by(CheckinSemanal.semana)
+            ).all()
+        )
+        ultimo = checkins[-1] if checkins else None
+        anterior = checkins[-2] if len(checkins) >= 2 else None
+
+        pesos = [c.peso_kg for c in checkins if c.peso_kg is not None]
+        tendencia = _tendencia_de_peso(pesos)
+
+        protocolo_ativo = sessao.scalars(
+            select(ProtocoloAlimentar)
+            .where(ProtocoloAlimentar.aluno_id == aluno.id)
+            .where(ProtocoloAlimentar.ativo.is_(True))
+        ).first()
+
+        forca = {
+            item.exercicio: [p.e1rm for p in item.pontos]
+            for item in resumo_de_forca(sessao, aluno.id, semanas=12)
+        }
+
+        achados = avaliar(
+            hoje=hoje,
+            ultimo_checkin=ultimo.semana if ultimo else None,
+            horas_de_sono=ultimo.horas_de_sono if ultimo else None,
+            em_corte=protocolo_ativo is not None
+            and protocolo_ativo.deficit_kcal is not None,
+            tendencia_de_peso_kg=tendencia,
+            forca_por_exercicio=forca,
+            aderencia_dieta_atual=ultimo.aderencia_dieta if ultimo else None,
+            aderencia_dieta_anterior=anterior.aderencia_dieta if anterior else None,
+        )
+
+        resultado.append(
+            AlunoComAlertas(
+                aluno_id=aluno.id,
+                nome=aluno.usuario.nome,
+                objetivo=aluno.objetivo,
+                alertas=[AlertaEmResposta(**a.__dict__) for a in achados],
+                pontuacao=pontuacao(achados),
+            )
+        )
+
+    # Quem tem mais sinal primeiro; empate resolve por nome, para a lista não
+    # embaralhar a cada carregamento.
+    resultado.sort(key=lambda a: (-a.pontuacao, a.nome))
+    return resultado
+
+
+def _tendencia_de_peso(pesos: list[float], janela: int = 4) -> list[float]:
+    """Média móvel simples — mesma janela do gráfico de evolução.
+
+    Só a partir do ponto em que a janela está cheia: começar antes desenharia
+    tendência a partir de duas semanas, que é exatamente o ruído que a média
+    existe para tirar.
+    """
+    if len(pesos) < janela:
+        return []
+    return [
+        round(sum(pesos[fim - janela : fim]) / janela, 2)
+        for fim in range(janela, len(pesos) + 1)
+    ]
 
 
 @rotas.get("/{aluno_id}", response_model=AlunoEmResposta)

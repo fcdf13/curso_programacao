@@ -5,10 +5,56 @@ import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
 
 import { api, ErroDaApi } from "../api/cliente";
-import type { Aluno, Sexo } from "../api/tipos";
+import type { Aluno, AlunoComAlertas, Sexo } from "../api/tipos";
 import "./paginas.css";
 
 const SENHA_MINIMA = 10;
+
+/** Junta o perfil com os alertas dele, na ordem de quem precisa de atenção
+ *  primeiro. Sem os alertas (ainda carregando, ou a chamada falhou), cai para
+ *  a ordem alfabética que a API de alunos já devolve. */
+function ordenarPorAlerta(
+  alunos: Aluno[],
+  alertas: AlunoComAlertas[] | null,
+): { aluno: Aluno; alertas: AlunoComAlertas["alertas"] }[] {
+  if (alertas === null) {
+    return alunos.map((aluno) => ({ aluno, alertas: [] }));
+  }
+
+  const porId = new Map(alunos.map((aluno) => [aluno.id, aluno]));
+  const ordenados = alertas
+    .map((item) => {
+      const aluno = porId.get(item.aluno_id);
+      return aluno === undefined ? null : { aluno, alertas: item.alertas };
+    })
+    .filter(
+      (item): item is { aluno: Aluno; alertas: AlunoComAlertas["alertas"] } =>
+        item !== null,
+    );
+
+  // Um aluno cadastrado depois da última busca de alertas ainda não aparece
+  // na lista deles; entra no fim em vez de sumir da tela.
+  const vistos = new Set(ordenados.map((item) => item.aluno.id));
+  for (const aluno of alunos) {
+    if (!vistos.has(aluno.id)) ordenados.push({ aluno, alertas: [] });
+  }
+  return ordenados;
+}
+
+function SinalDeAlerta({ alertas }: { alertas: AlunoComAlertas["alertas"] }) {
+  const grave = alertas.some((a) => a.gravidade >= 3);
+  const dica = alertas.map((a) => a.mensagem).join(" ");
+  return (
+    <span
+      className={`sinal-de-alerta ${grave ? "grave" : "atencao"}`}
+      title={dica}
+      aria-label={dica}
+    >
+      {alertas.length}
+    </span>
+  );
+}
+
 
 const VAZIO = {
   nome: "",
@@ -22,6 +68,7 @@ const VAZIO = {
 
 export function Alunos() {
   const [alunos, definirAlunos] = useState<Aluno[] | null>(null);
+  const [alertas, definirAlertas] = useState<AlunoComAlertas[] | null>(null);
   const [erro, definirErro] = useState<string | null>(null);
 
   const [abrirFormulario, definirAbrirFormulario] = useState(false);
@@ -39,6 +86,9 @@ export function Alunos() {
           falha instanceof ErroDaApi ? falha.message : "Não foi possível carregar.",
         ),
       );
+    // Silenciosa: sem os alertas a lista ainda funciona, só volta a ordenar
+    // por nome — um extra que falhou não pode travar a tela principal.
+    api.alertasDosAlunos().then(definirAlertas).catch(() => undefined);
   }, []);
 
   function alterar(campo: keyof typeof VAZIO, valor: string) {
@@ -216,16 +266,26 @@ export function Alunos() {
 
       {alunos !== null && alunos.length > 0 && (
         <ul className="lista-de-alunos">
-          {alunos.map((aluno) => (
+          {ordenarPorAlerta(alunos, alertas).map(({ aluno, alertas: doAluno }) => {
+            const grave = doAluno.some((item) => item.gravidade >= 3);
+            const atencao = doAluno.some((item) => item.gravidade === 2);
+            return (
             <li key={aluno.id}>
-              <Link to={`/alunos/${aluno.id}`}>
-                <span className="aluno-nome">{aluno.nome}</span>
+              <Link
+                to={`/alunos/${aluno.id}`}
+                className={grave ? "grave" : atencao ? "atencao" : undefined}
+              >
+                <div className="aluno-linha">
+                  <span className="aluno-nome">{aluno.nome}</span>
+                  {doAluno.length > 0 && <SinalDeAlerta alertas={doAluno} />}
+                </div>
                 <span className="aluno-objetivo">
-                  {aluno.objetivo ?? "sem objetivo definido"}
+                  {doAluno[0]?.mensagem ?? aluno.objetivo ?? "sem objetivo definido"}
                 </span>
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </main>

@@ -179,8 +179,9 @@ Seguindo `app/src/componentes/graficos/`: SVG à mão, cor por token, legível n
 - **Volume semanal por grupo muscular** — barras empilhadas.
 - **Medidas** — small multiples.
 - **Aderência** — heatmap de calendário (o `CalendarioDePratica.tsx` já resolve esse formato).
-- **Painel do João** — um cartão por aluno, ordenado por sinal de alerta: sem check-in há
-  10 dias, sono < 6 h, peso subindo em fase de corte, e1RM caindo 2 semanas seguidas.
+- **Painel do João** ✅ — um cartão por aluno, ordenado por sinal de alerta: sem check-in há
+  10 dias, sono < 6 h, peso subindo em fase de corte, e1RM caindo 2 semanas seguidas. Feito
+  em `jf/alertas.py` + `GET /alunos/alertas`.
 
 ## 7. Dieta
 
@@ -223,10 +224,10 @@ mesmo formato de `app/src/estilo/tokens.css` — claro como base, escuro só red
 |---|---|---|
 | 0 ✅ | Estrutura, banco, auth, papéis, catálogo de exercícios, tokens da marca, casca do PWA | ~~João entra, cria um aluno, aluno faz login~~ — feito; ver [`README.md`](README.md) |
 | 1 ✅ | ~~Check-in semanal + medidas + gráficos~~ | ~~Aluno registra a semana, os dois veem o gráfico~~ — feito |
-| 2 ◐ | ~~Periodização, prescrição~~ (feito), **modo academia**, registro de séries | Aluno treina lendo do celular e registra carga/reps/RIR |
-| 3 ◐ | ~~`forca.py`, carga sugerida, arredondamento~~ (feito), gráfico de e1RM | Testes do paper passam; João aceita a carga sugerida |
+| 2 ✅ | ~~Periodização, prescrição, modo academia, registro de séries~~ | ~~Aluno treina lendo do celular e registra carga/reps/RIR~~ — feito |
+| 3 ✅ | ~~`forca.py`, carga sugerida, arredondamento, gráfico de e1RM~~ | ~~Testes do paper passam; João aceita a carga sugerida~~ — feito |
 | 4 ✅ | ~~Protocolo alimentar, substituições, aderência~~ | ~~O PDF do Filipe existe inteiro dentro do app~~ — feito; a base TACO/OFF entra por importação (`jf importar-alimentos`) |
-| 5 ◐ | Painel com alertas, sincronização offline, ~~export LGPD~~ (feito), ~~empacotamento de deploy~~ (feito, ver [`DEPLOY.md`](DEPLOY.md)) | Rodando no domínio dele, com backup |
+| 5 ◐ | ~~Painel com alertas~~ (feito), ~~sincronização offline~~ (feito, no modo academia), ~~export LGPD~~ (feito), ~~empacotamento de deploy~~ (feito, ver [`DEPLOY.md`](DEPLOY.md)), ~~backup automático~~ (feito) | Rodando no domínio dele |
 
 **Modo academia** (fase 2) merece atenção: tela grande, botão grande, cronômetro de
 descanso, carga em destaque — e fila de sincronização em IndexedDB, porque subsolo de

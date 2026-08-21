@@ -5,8 +5,9 @@ registra como a semana foi, o João prescreve o treino, e os dois veem a mesma
 evolução. O plano completo está em [`PLANO.md`](PLANO.md); para publicar, veja
 [`DEPLOY.md`](DEPLOY.md).
 
-**Fases 0 a 4 estão prontas, a 2 fechou com o modo academia, e a 3 fechou de
-verdade: a carga sugerida agora sai do que o aluno levantou.** O aluno faz o check-in semanal e os dois veem a
+**Fases 0 a 4 estão prontas, a 2 fechou com o modo academia, a 3 fechou de
+verdade (a carga sugerida agora sai do que o aluno levantou), e a 5 ganhou o
+painel de alertas do João.** O aluno faz o check-in semanal e os dois veem a
 evolução em gráfico; o João monta a periodização com a progressão de carga série
 a série, usa a calculadora para escolher a carga e monta o protocolo alimentar
 com os grupos de substituição — que o aluno abre no celular e marca refeição a
@@ -62,7 +63,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 453 testes
+cd treino && python3 -m pytest      # 490 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -78,6 +79,7 @@ e só falha quando alguém troca o número na URL.
 jf/
   backup.py       cópia do banco, e o agendamento que a faz sozinha
   progresso.py    e1RM ao longo do tempo, a partir das séries executadas
+  alertas.py      os sinais que colocam um aluno no topo da lista do João
   validacao.py    traduz o 422 do Pydantic para uma frase que o aluno entenda
   forca.py        a equação de 1RM e o cálculo de carga (puro, sem I/O)
   leitura.py      lê a prescrição escrita à mão (puro, sem I/O)
@@ -115,7 +117,7 @@ web/
   gerar-icones.py desenha os ícones do PWA a partir do monograma
 ```
 
-## Treze decisões que valem saber
+## Catorze decisões que valem saber
 
 **A convenção de carga é dado de primeira classe.** Cada exercício declara se a
 carga é registrada como peso total (barra, incluindo a barra), por halter (o peso
@@ -153,6 +155,13 @@ quem responde na terça cairiam em linhas diferentes do gráfico, e um envio
 duplicado viraria um degrau falso. Semana sem resposta **some** da série em vez
 de virar zero: quem não pesou não pesa zero, e uma linha caindo até o eixo seria
 mentira.
+
+**O painel de alertas é regra explicável, não aprendizado de máquina.** Cinco
+sinais — sem check-in, sono baixo, peso subindo em fase de déficit, força caindo
+duas vezes seguidas no mesmo exercício, aderência à dieta em queda — cada um
+dando para resumir numa frase. Um alerta que ninguém entende por que disparou é
+um alerta que se aprende a ignorar, e é por isso que `jf/alertas.py` é função
+pura e testável, não um modelo estatístico por cima do histórico.
 
 **A comparação da equação é por valor, não por identidade.** `Periodizacao.
 equacao` é uma coluna de texto — `"proposta"`, não `Equacao.PROPOSTA` — e o
@@ -238,6 +247,10 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
   prescrição precisa depender do histórico.
 - **O modo academia só abre treino que foi prescrito.** Treinar algo fora do
   plano não tem tela; o registro parte sempre de uma sessão da periodização.
+- **O painel de alertas olha 8 a 12 semanas para trás, não o histórico
+  inteiro.** Um aluno que treina há dois anos não deveria carregar para sempre
+  um mês ruim de 2024. As janelas (`jf/alertas.py` e `resumo_de_forca`) são fixas
+  e ainda não configuráveis pelo João.
 - **`Prescricao.ordem` não é reordenável pela tela.** Os exercícios saem na ordem
   em que foram criados; as séries dentro de um exercício, sim, sobem e descem.
 - **O leitor de texto entende as séries, não o treino inteiro.** Colar
@@ -259,6 +272,6 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
   Food Facts. Nada do protocolo depende disso.
 - **O protocolo não soma kcal nem macro.** Depende do catálogo acima, e um
   total somado por cima de valores incompletos seria pior que não somar.
-- **Sem gráfico de e1RM nem de medidas.** O check-in guarda as medidas de fita,
-  mas ainda não há gráfico para elas; o e1RM depende do aluno registrar as séries
-  executadas, que é o lado do treino ainda não feito.
+- **Sem gráfico de medidas.** O check-in guarda as medidas de fita (cintura,
+  quadril, tórax, braço, coxa, panturrilha), mas ainda não há gráfico para elas —
+  o e1RM já tem o dele (`PainelDeForca.tsx`).

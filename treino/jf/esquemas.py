@@ -835,3 +835,20 @@ class CargaSugerida(BaseModel):
     carga_arredondada_kg: float
     confiavel: bool
     ressalva: str | None
+
+
+# ------------------------------------------------------------------ alertas
+
+
+class AlertaEmResposta(BaseModel):
+    tipo: str
+    gravidade: int
+    mensagem: str
+
+
+class AlunoComAlertas(BaseModel):
+    aluno_id: int
+    nome: str
+    objetivo: str | None
+    alertas: list[AlertaEmResposta]
+    pontuacao: int

@@ -366,21 +366,23 @@ def forca_no_exercicio(
     )
 
 
-@rotas.get("/alunos/{aluno_id}/forca", response_model=list[ForcaDoExercicio])
-def forca(
-    aluno: Aluno = Depends(aluno_permitido),
-    sessao: Session = Depends(obter_sessao),
-    semanas: int = 26,
+def resumo_de_forca(
+    sessao: Session, aluno_id: int, semanas: int = 26
 ) -> list[ForcaDoExercicio]:
-    """Um resumo por exercício que o aluno registrou na janela."""
+    """Um resumo por exercício que o aluno registrou na janela.
+
+    Extraída da rota para o painel de alertas poder reaproveitar a mesma
+    conta — ter duas contas de "força caindo" que podem divergir seria pior
+    que não ter nenhuma.
+    """
     desde = date.today() - timedelta(weeks=max(semanas, 1))
-    equacao = _equacao_do_aluno(sessao, aluno.id)
+    equacao = _equacao_do_aluno(sessao, aluno_id)
 
     exercicios = sessao.scalars(
         select(Exercicio)
         .join(SerieRealizada, SerieRealizada.exercicio_id == Exercicio.id)
         .join(SessaoRealizada)
-        .where(SessaoRealizada.aluno_id == aluno.id)
+        .where(SessaoRealizada.aluno_id == aluno_id)
         .where(SessaoRealizada.dia >= desde)
         .distinct()
         .order_by(Exercicio.nome)
@@ -389,7 +391,7 @@ def forca(
     resumo = []
     for exercicio in exercicios:
         pontos = melhor_do_dia(
-            _registros(sessao, aluno.id, exercicio.id, desde), equacao
+            _registros(sessao, aluno_id, exercicio.id, desde), equacao
         )
         if not pontos:
             continue
@@ -404,6 +406,15 @@ def forca(
             )
         )
     return resumo
+
+
+@rotas.get("/alunos/{aluno_id}/forca", response_model=list[ForcaDoExercicio])
+def forca(
+    aluno: Aluno = Depends(aluno_permitido),
+    sessao: Session = Depends(obter_sessao),
+    semanas: int = 26,
+) -> list[ForcaDoExercicio]:
+    return resumo_de_forca(sessao, aluno.id, semanas)
 
 
 @rotas.get(
