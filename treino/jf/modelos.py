@@ -521,6 +521,152 @@ class SerieDaPrescricao(Base):
         return f"<Serie {self.ordem} {self.reps}x{self.carga_kg}>"
 
 
+# ======================================================== o treino executado
+
+
+class SessaoRealizada(Base):
+    """Um treino que aconteceu — o lado do aluno.
+
+    Guarda o nome do treino em vez de só apontar para o modelo: o João
+    reorganiza a periodização, apaga um bloco velho, e o histórico do aluno não
+    pode sumir junto. A carga que ele levantou em março continua sendo verdade
+    depois que o "Treino A" de março deixou de existir; por isso o vínculo é
+    `SET NULL` e o nome vem copiado.
+    """
+
+    __tablename__ = "sessao_realizada"
+    __table_args__ = (
+        UniqueConstraint("aluno_id", "sessao_id", "dia", name="um_treino_por_dia"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    aluno_id: Mapped[int] = mapped_column(
+        ForeignKey("aluno.id", ondelete="CASCADE"), index=True
+    )
+    sessao_id: Mapped[int | None] = mapped_column(
+        ForeignKey("sessao_modelo.id", ondelete="SET NULL"), default=None, index=True
+    )
+    nome: Mapped[str] = mapped_column(String(120))
+    dia: Mapped[date] = mapped_column(Date, index=True)
+
+    iniciada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+    encerrada_em: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
+    observacoes: Mapped[str | None] = mapped_column(Text, default=None)
+
+    aluno: Mapped["Aluno"] = relationship()
+    modelo: Mapped["SessaoModelo | None"] = relationship()
+    series: Mapped[list["SerieRealizada"]] = relationship(
+        back_populates="sessao",
+        cascade="all, delete-orphan",
+        order_by="SerieRealizada.ordem",
+    )
+
+    @property
+    def encerrada(self) -> bool:
+        return self.encerrada_em is not None
+
+    @property
+    def tonelagem(self) -> float:
+        """O que foi levantado de verdade, só nas séries que contam."""
+        return sum(serie.tonelagem or 0.0 for serie in self.series)
+
+    def __repr__(self) -> str:
+        return f"<SessaoRealizada {self.id} {self.nome} {self.dia}>"
+
+
+class SerieRealizada(Base):
+    """Uma série que o aluno fez: carga, repetições e RIR.
+
+    O `rir` não é enfeite: é ele que decide se a série serve para estimar 1RM.
+    A equação foi calibrada perto da falha, e uma série com quatro repetições
+    na reserva subestima o número de um jeito que não dá para corrigir depois.
+
+    A técnica não é escolhida aqui — vem da prescrição. Pedir para o aluno
+    marcar "cluster set" entre uma série e outra é atrito na hora errada, e ele
+    está fazendo exatamente o que foi prescrito.
+    """
+
+    __tablename__ = "serie_realizada"
+    __table_args__ = (
+        # A chave que o celular gerou. Sem ela, um envio repetido depois de uma
+        # conexão instável duplicaria a série — e o volume da semana mentiria.
+        UniqueConstraint("sessao_realizada_id", "chave_local", name="uma_serie_por_chave"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    sessao_realizada_id: Mapped[int] = mapped_column(
+        ForeignKey("sessao_realizada.id", ondelete="CASCADE"), index=True
+    )
+    chave_local: Mapped[str] = mapped_column(String(64))
+    ordem: Mapped[int] = mapped_column(Integer, default=0)
+
+    # O exercício é o que importa para o histórico e sobrevive a tudo; a
+    # prescrição e a série prescritas são procedência, e podem sumir.
+    exercicio_id: Mapped[int] = mapped_column(ForeignKey("exercicio.id"), index=True)
+    prescricao_id: Mapped[int | None] = mapped_column(
+        ForeignKey("prescricao.id", ondelete="SET NULL"), default=None
+    )
+    serie_id: Mapped[int | None] = mapped_column(
+        ForeignKey("serie_da_prescricao.id", ondelete="SET NULL"), default=None
+    )
+
+    reps: Mapped[int | None] = mapped_column(Integer, default=None)
+    carga_kg: Mapped[float | None] = mapped_column(Float, default=None)
+    rir: Mapped[int | None] = mapped_column(Integer, default=None)
+    tipo: Mapped[TipoDeSerie] = mapped_column(
+        Enum(TipoDeSerie, native_enum=False), default=TipoDeSerie.VALIDA
+    )
+    observacao: Mapped[str | None] = mapped_column(String(200), default=None)
+    registrada_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=agora
+    )
+
+    sessao: Mapped[SessaoRealizada] = relationship(back_populates="series")
+    exercicio: Mapped["Exercicio"] = relationship()
+    prescricao: Mapped["Prescricao | None"] = relationship()
+    prescrita: Mapped["SerieDaPrescricao | None"] = relationship()
+
+    @property
+    def tecnicas(self) -> list[Tecnica]:
+        """As da série prescrita; sem ela, as do exercício na prescrição."""
+        if self.prescrita is not None and self.prescrita.tecnicas:
+            return list(self.prescrita.tecnicas)
+        if self.prescricao is not None:
+            return list(self.prescricao.tecnicas)
+        return []
+
+    @property
+    def distorce_estimativa(self) -> bool:
+        return any(tecnica.distorce_estimativa for tecnica in self.tecnicas)
+
+    @property
+    def tonelagem(self) -> float | None:
+        if not self.tipo.conta_no_volume:
+            return None
+        if self.reps is None or self.carga_kg is None:
+            return None
+        return self.reps * self.carga_kg
+
+    @property
+    def serve_para_1rm(self) -> bool:
+        """Se esta série pode virar estimativa de 1RM.
+
+        Mesma régua da série prescrita: preparação não vale porque não vai
+        perto da falha, e técnica que muda o que "uma série" significa
+        invalida a conta — um cluster de 3×3 não é uma série de 9.
+        """
+        if self.reps is None or self.carga_kg is None or self.carga_kg <= 0:
+            return False
+        if not self.tipo.conta_no_volume:
+            return False
+        return not self.distorce_estimativa
+
+    def __repr__(self) -> str:
+        return f"<SerieRealizada {self.ordem} {self.reps}x{self.carga_kg}>"
+
+
 # ============================================================ a semana do aluno
 
 

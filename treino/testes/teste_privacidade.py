@@ -317,6 +317,24 @@ def teste_apagar_nao_deixa_nada_para_tras(consentido, cenario, sessao_de_banco, 
         json={"series": [{"reps": 10, "carga_kg": 60, "tecnica_ids": [cluster.id]}]},
     )
 
+    # Um treino executado, com série registrada.
+    feito = consentido.post(
+        f"/api/alunos/{aluno_id}/treinos-realizados", json={"sessao_id": treino["id"]}
+    ).json()
+    consentido.put(
+        f"/api/treinos-realizados/{feito['id']}/series",
+        json={
+            "series": [
+                {
+                    "chave_local": "serie-de-teste-01",
+                    "exercicio_id": exercicio.id,
+                    "reps": 10,
+                    "carga_kg": 60,
+                }
+            ]
+        },
+    )
+
     # Um protocolo alimentar com refeição marcada.
     protocolo = joao.post(
         f"/api/alunos/{aluno_id}/protocolos",
@@ -362,7 +380,7 @@ def teste_apagar_nao_deixa_nada_para_tras(consentido, cenario, sessao_de_banco, 
     for tabela in ("sessao_modelo", "prescricao", "serie_da_prescricao",
                    "prescricao_tecnica", "serie_tecnica", "medida_corporal",
                    "grupo_de_substituicao", "item_de_substituicao", "refeicao",
-                   "item_da_refeicao", "suplemento"):
+                   "item_da_refeicao", "suplemento", "serie_realizada"):
         assert sessao_de_banco.execute(
             text(f"SELECT COUNT(*) FROM {tabela}")
         ).scalar_one() == 0, f"{tabela} não ficou vazia"

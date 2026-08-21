@@ -707,3 +707,92 @@ class AderenciaEmResposta(BaseModel):
     dia: date
     seguiu: bool
     observacao: str | None
+
+
+# -------------------------------------------------------- treino executado
+
+
+class AberturaDeTreino(BaseModel):
+    sessao_id: int
+    dia: date = Field(default_factory=date.today)
+
+
+class SerieExecutada(BaseModel):
+    """Uma série como o celular a manda.
+
+    `chave_local` é gerada no aparelho e é o que torna o envio repetível: sem
+    ela, reenviar a fila depois de uma conexão instável duplicaria as séries, e
+    o volume da semana passaria a mentir.
+    """
+
+    chave_local: str = Field(min_length=8, max_length=64)
+    ordem: int = 0
+    exercicio_id: int
+    prescricao_id: int | None = None
+    serie_id: int | None = None
+    reps: int | None = Field(default=None, ge=1, le=200)
+    carga_kg: float | None = Field(default=None, ge=0, le=1000)
+    rir: int | None = Field(default=None, ge=0, le=10)
+    tipo: TipoDeSerie = TipoDeSerie.VALIDA
+    observacao: str | None = Field(default=None, max_length=200)
+
+
+class SeriesExecutadas(BaseModel):
+    """O que o aparelho tem para esta sessão.
+
+    Só acrescenta e atualiza; **nunca apaga** o que não veio na lista. Um
+    celular com visão parcial — ficou offline no meio do treino — apagaria
+    séries registradas de outro lugar se a ausência valesse como remoção.
+    """
+
+    series: list[SerieExecutada] = Field(default_factory=list, max_length=200)
+
+
+class SerieExecutadaEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    chave_local: str
+    ordem: int
+    exercicio_id: int
+    prescricao_id: int | None
+    serie_id: int | None
+    reps: int | None
+    carga_kg: float | None
+    rir: int | None
+    tipo: TipoDeSerie
+    observacao: str | None
+    tonelagem: float | None
+    # A técnica vem da prescrição, não da mão do aluno no meio do treino.
+    distorce_estimativa: bool
+
+
+class TreinoRealizadoEmResposta(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    aluno_id: int
+    sessao_id: int | None
+    nome: str
+    dia: date
+    iniciada_em: datetime
+    encerrada_em: datetime | None
+    encerrada: bool
+    observacoes: str | None
+    tonelagem: float
+    series: list[SerieExecutadaEmResposta]
+
+
+class TreinoNaLista(BaseModel):
+    model_config = _do_orm
+
+    id: int
+    sessao_id: int | None
+    nome: str
+    dia: date
+    encerrada: bool
+    tonelagem: float
+
+
+class EncerramentoDoTreino(BaseModel):
+    observacoes: str | None = Field(default=None, max_length=2000)

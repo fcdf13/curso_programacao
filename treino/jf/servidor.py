@@ -18,6 +18,7 @@ from jf.api import (
     calculadora,
     checkins,
     dieta,
+    execucao,
     exercicios,
     privacidade,
     sessao,
@@ -114,6 +115,7 @@ def criar_app() -> FastAPI:
     api.include_router(treinos.rotas)
     api.include_router(checkins.rotas)
     api.include_router(dieta.rotas)
+    api.include_router(execucao.rotas)
     api.include_router(privacidade.rotas)
     api.include_router(calculadora.rotas)
     # Depois de todas as rotas: o que se registra num router após a inclusão

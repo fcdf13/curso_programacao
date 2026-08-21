@@ -22,6 +22,7 @@ from jf.modelos import (
     Papel,
     Periodizacao,
     ProtocoloAlimentar,
+    SessaoRealizada,
     Usuario,
     agora,
 )
@@ -110,6 +111,12 @@ def _do_aluno(aluno: Aluno, sessao: Session) -> dict:
         sessao.query(ProtocoloAlimentar)
         .filter(ProtocoloAlimentar.aluno_id == aluno.id)
         .order_by(ProtocoloAlimentar.criado_em)
+        .all()
+    )
+    executados = (
+        sessao.query(SessaoRealizada)
+        .filter(SessaoRealizada.aluno_id == aluno.id)
+        .order_by(SessaoRealizada.dia)
         .all()
     )
     marcacoes = (
@@ -252,6 +259,31 @@ def _do_aluno(aluno: Aluno, sessao: Session) -> dict:
                 ],
             }
             for protocolo in protocolos
+        ],
+        # O que ele levantou de verdade. É o dado mais difícil de recriar de
+        # todos: ninguém lembra a carga de uma terça-feira de março.
+        "treinos_executados": [
+            {
+                "dia": feito.dia,
+                "treino": feito.nome,
+                "iniciado_em": feito.iniciada_em,
+                "encerrado_em": feito.encerrada_em,
+                "observacoes": feito.observacoes,
+                "tonelagem": feito.tonelagem,
+                "series": [
+                    {
+                        "exercicio": s.exercicio.nome,
+                        "reps": s.reps,
+                        "carga_kg": s.carga_kg,
+                        "rir": s.rir,
+                        "tipo": s.tipo.value,
+                        "tecnicas": [t.nome for t in s.tecnicas],
+                        "observacao": s.observacao,
+                    }
+                    for s in feito.series
+                ],
+            }
+            for feito in executados
         ],
         "aderencia_as_refeicoes": [
             {

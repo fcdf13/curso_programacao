@@ -58,6 +58,7 @@ NOMES: dict[str, tuple[str, str]] = {
     "observacoes": ("as", "observações"),
     "observacao": ("a", "observação"),
     "ordem": ("a", "ordem"),
+    "chave_local": ("a", "chave da série"),
     "disposicao": ("a", "disposição"),
     "recuperacao": ("a", "recuperação"),
     "cadencia": ("a", "cadência"),
