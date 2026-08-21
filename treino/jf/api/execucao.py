@@ -27,14 +27,19 @@ from jf.auth import (
 from jf.banco import obter_sessao
 from jf.esquemas import (
     AberturaDeTreino,
+    CargaSugerida,
     EncerramentoDoTreino,
+    ForcaDoExercicio,
     SeriesExecutadas,
     TreinoNaLista,
     TreinoRealizadoEmResposta,
 )
+from jf.forca import Equacao, arredondar_para_anilha
+from jf.progresso import Registro, atual, melhor_do_dia, variacao
 from jf.modelos import (
     Aluno,
     Exercicio,
+    Periodizacao,
     Prescricao,
     SerieDaPrescricao,
     SerieRealizada,
@@ -285,3 +290,174 @@ def apagar(
 ) -> None:
     sessao.delete(treino)
     sessao.commit()
+
+
+# ------------------------------------------------------------ força no tempo
+
+
+def _registros(
+    sessao: Session, aluno_id: int, exercicio_id: int, desde: date
+) -> list[Registro]:
+    """As séries que servem para estimar 1RM, viradas em dado puro."""
+    series = sessao.scalars(
+        select(SerieRealizada)
+        .join(SessaoRealizada)
+        .where(SessaoRealizada.aluno_id == aluno_id)
+        .where(SessaoRealizada.dia >= desde)
+        .where(SerieRealizada.exercicio_id == exercicio_id)
+        .order_by(SessaoRealizada.dia)
+    ).all()
+
+    return [
+        Registro(
+            dia=serie.sessao.dia,
+            reps=serie.reps,
+            carga_kg=serie.carga_kg,
+            rir=serie.rir,
+            distorce=serie.distorce_estimativa,
+        )
+        for serie in series
+        if serie.serve_para_1rm
+    ]
+
+
+def _equacao_do_aluno(sessao: Session, aluno_id: int) -> Equacao:
+    """A equação que o João escolheu no bloco em andamento.
+
+    Trocar de equação no meio muda o número sem o aluno ter mudado de força, e
+    misturar as duas num gráfico só seria pior — então vale a do bloco ativo.
+    """
+    escolhida = sessao.scalars(
+        select(Periodizacao.equacao)
+        .where(Periodizacao.aluno_id == aluno_id)
+        .where(Periodizacao.ativa.is_(True))
+        .order_by(Periodizacao.criada_em.desc())
+    ).first()
+    # A coluna guarda texto; `Equacao(...)` é o que impede a string crua de
+    # circular como se fosse o membro do enum.
+    return Equacao(escolhida) if escolhida else Equacao.PROPOSTA
+
+
+@rotas.get(
+    "/alunos/{aluno_id}/forca/{exercicio_id}", response_model=ForcaDoExercicio
+)
+def forca_no_exercicio(
+    exercicio_id: int,
+    aluno: Aluno = Depends(aluno_permitido),
+    sessao: Session = Depends(obter_sessao),
+    semanas: int = 26,
+) -> ForcaDoExercicio:
+    """A evolução do 1RM estimado num exercício, a partir do que ele levantou."""
+    exercicio = sessao.get(Exercicio, exercicio_id)
+    if exercicio is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Exercício não encontrado.")
+
+    equacao = _equacao_do_aluno(sessao, aluno.id)
+    desde = date.today() - timedelta(weeks=max(semanas, 1))
+    pontos = melhor_do_dia(_registros(sessao, aluno.id, exercicio_id, desde), equacao)
+
+    return ForcaDoExercicio(
+        exercicio_id=exercicio_id,
+        exercicio=exercicio.nome,
+        equacao=equacao,
+        atual=atual(pontos),
+        variacao_kg=variacao(pontos),
+        pontos=pontos,
+    )
+
+
+@rotas.get("/alunos/{aluno_id}/forca", response_model=list[ForcaDoExercicio])
+def forca(
+    aluno: Aluno = Depends(aluno_permitido),
+    sessao: Session = Depends(obter_sessao),
+    semanas: int = 26,
+) -> list[ForcaDoExercicio]:
+    """Um resumo por exercício que o aluno registrou na janela."""
+    desde = date.today() - timedelta(weeks=max(semanas, 1))
+    equacao = _equacao_do_aluno(sessao, aluno.id)
+
+    exercicios = sessao.scalars(
+        select(Exercicio)
+        .join(SerieRealizada, SerieRealizada.exercicio_id == Exercicio.id)
+        .join(SessaoRealizada)
+        .where(SessaoRealizada.aluno_id == aluno.id)
+        .where(SessaoRealizada.dia >= desde)
+        .distinct()
+        .order_by(Exercicio.nome)
+    ).all()
+
+    resumo = []
+    for exercicio in exercicios:
+        pontos = melhor_do_dia(
+            _registros(sessao, aluno.id, exercicio.id, desde), equacao
+        )
+        if not pontos:
+            continue
+        resumo.append(
+            ForcaDoExercicio(
+                exercicio_id=exercicio.id,
+                exercicio=exercicio.nome,
+                equacao=equacao,
+                atual=atual(pontos),
+                variacao_kg=variacao(pontos),
+                pontos=pontos,
+            )
+        )
+    return resumo
+
+
+@rotas.get(
+    "/sessoes/{sessao_id}/cargas-sugeridas", response_model=list[CargaSugerida]
+)
+def cargas_sugeridas(
+    sessao_id: int,
+    usuario: Usuario = Depends(usuario_atual),
+    sessao: Session = Depends(obter_sessao),
+    semanas: int = 12,
+) -> list[CargaSugerida]:
+    """A carga de cada prescrição que pede percentual de 1RM.
+
+    É aqui que o paper encosta na prescrição: o João marca "80% de 1RM" e o
+    número sai do que o aluno levantou nas últimas semanas, não da memória dele.
+
+    Só responde pelas prescrições que **pedem** percentual e cujo exercício já
+    tem série registrada. Silêncio é a resposta certa quando não há base: um
+    número inventado aqui vira carga na barra.
+    """
+    modelo = sessao.get(SessaoModelo, sessao_id)
+    if modelo is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Treino não encontrado.")
+    aluno = exigir_acesso(usuario, modelo.periodizacao.aluno)
+
+    equacao = Equacao(modelo.periodizacao.equacao)
+    desde = date.today() - timedelta(weeks=max(semanas, 1))
+    sugestoes = []
+
+    for prescricao in modelo.prescricoes:
+        if prescricao.percentual_1rm is None:
+            continue
+
+        pontos = melhor_do_dia(
+            _registros(sessao, aluno.id, prescricao.exercicio_id, desde), equacao
+        )
+        recente = atual(pontos)
+        if recente is None:
+            continue
+
+        alvo = recente.e1rm * prescricao.percentual_1rm / 100
+        sugestoes.append(
+            CargaSugerida(
+                prescricao_id=prescricao.id,
+                exercicio=prescricao.exercicio.nome,
+                percentual_1rm=prescricao.percentual_1rm,
+                e1rm=recente.e1rm,
+                carga_kg=round(alvo, 1),
+                carga_arredondada_kg=arredondar_para_anilha(
+                    alvo, prescricao.exercicio.incremento_kg
+                ),
+                confiavel=recente.confiavel,
+                ressalva=recente.ressalva,
+            )
+        )
+
+    return sugestoes

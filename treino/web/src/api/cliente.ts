@@ -4,6 +4,7 @@ import type {
   Aderencia,
   Alimento,
   Aluno,
+  CargaSugerida,
   Checkin,
   Evolucao,
   Exercicio,
@@ -19,6 +20,7 @@ import type {
   Periodizacao,
   PeriodizacaoBase,
   PeriodizacaoNaLista,
+  ForcaDoExercicio,
   Prescricao,
   Protocolo,
   ProtocoloLido,
@@ -201,6 +203,19 @@ export const api = {
 
   reabrirTreino: (treinoId: number) =>
     pedir<TreinoRealizado>(`/treinos-realizados/${treinoId}/reabrir`, { method: "POST" }),
+
+  /** A evolução do 1RM estimado, a partir do que o aluno levantou. */
+  forcaDoAluno: (alunoId: number, semanas = 26) =>
+    pedir<ForcaDoExercicio[]>(`/alunos/${alunoId}/forca?semanas=${semanas}`),
+
+  forcaNoExercicio: (alunoId: number, exercicioId: number, semanas = 26) =>
+    pedir<ForcaDoExercicio>(
+      `/alunos/${alunoId}/forca/${exercicioId}?semanas=${semanas}`,
+    ),
+
+  /** O ciclo fechando: a carga que sai do e1RM para as prescrições com %1RM. */
+  cargasSugeridas: (sessaoId: number) =>
+    pedir<CargaSugerida[]>(`/sessoes/${sessaoId}/cargas-sugeridas`),
 
   // ------------------------------------------------------------- senha
 

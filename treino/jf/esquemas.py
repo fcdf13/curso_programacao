@@ -796,3 +796,42 @@ class TreinoNaLista(BaseModel):
 
 class EncerramentoDoTreino(BaseModel):
     observacoes: str | None = Field(default=None, max_length=2000)
+
+
+# ------------------------------------------------------------ força no tempo
+
+
+class PontoDeForca(BaseModel):
+    # Vem do dataclass de `jf.progresso`, que é puro de propósito.
+    model_config = _do_orm
+
+    dia: date
+    e1rm: float
+    # De onde saiu a estimativa: "86 kg (8 × 70)" dá para conferir; um número
+    # solto, não.
+    reps: int
+    carga_kg: float
+    confiavel: bool
+    ressalva: str | None
+
+
+class ForcaDoExercicio(BaseModel):
+    exercicio_id: int
+    exercicio: str
+    equacao: Equacao
+    atual: PontoDeForca | None
+    # Diferença em kg entre o primeiro e o último ponto da janela.
+    variacao_kg: float | None
+    pontos: list[PontoDeForca]
+
+
+class CargaSugerida(BaseModel):
+    prescricao_id: int
+    exercicio: str
+    percentual_1rm: float
+    e1rm: float
+    carga_kg: float
+    # Arredondada para o que dá para montar na barra daquele exercício.
+    carga_arredondada_kg: float
+    confiavel: bool
+    ressalva: str | None

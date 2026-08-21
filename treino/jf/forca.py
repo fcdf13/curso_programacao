@@ -119,7 +119,12 @@ def estimar_1rm(carga_kg: float, reps: int, equacao: Equacao = Equacao.PROPOSTA)
     if reps == 1:
         return carga_kg
 
-    if equacao is Equacao.PROPOSTA:
+    # `==` e não `is`: `Equacao` é enum de string, e quem lê a escolha do banco
+    # tem em mãos `"proposta"`, não o membro. Com `is`, essa string cairia
+    # calada na última equação do arquivo — foi exatamente o que aconteceu.
+    equacao = Equacao(equacao)
+
+    if equacao == Equacao.PROPOSTA:
         if carga_kg < CARGA_MINIMA_PROPOSTA:
             raise ForaDoDominio(
                 f"A equação proposta só é monótona a partir de "
@@ -128,7 +133,7 @@ def estimar_1rm(carga_kg: float, reps: int, equacao: Equacao = Equacao.PROPOSTA)
             )
         return carga_kg * (1 + (reps - 1) ** ALFA / fator_de_conversao(carga_kg))
 
-    if equacao is Equacao.EPLEY:
+    if equacao == Equacao.EPLEY:
         return carga_kg * (1 + reps / 30)
 
     # Brzycki zera o denominador em 37 reps; `REPS_MAXIMAS` já barra antes.
@@ -148,6 +153,7 @@ def carga_para(
     if alvo_1rm <= 0:
         raise CargaInvalida("O 1RM alvo precisa ser maior que zero.")
     _conferir(alvo_1rm, reps)
+    equacao = Equacao(equacao)
 
     if reps == 1:
         return alvo_1rm
@@ -155,7 +161,7 @@ def carga_para(
     # `estimar_1rm(w, r) >= w` sempre, então a resposta nunca passa do alvo.
     # O piso é onde a equação começa a ser monótona — fora dele a bisseção
     # poderia convergir para a raiz errada em vez de falhar.
-    baixo = CARGA_MINIMA_PROPOSTA if equacao is Equacao.PROPOSTA else 1e-4
+    baixo = CARGA_MINIMA_PROPOSTA if equacao == Equacao.PROPOSTA else 1e-4
     alto = alvo_1rm
 
     if baixo >= alto or estimar_1rm(baixo, reps, equacao) > alvo_1rm:

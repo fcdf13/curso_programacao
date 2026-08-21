@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router-dom";
 import { api, ErroDaApi } from "../api/cliente";
 import type { Aluno, FaseDaPeriodizacao, PeriodizacaoNaLista } from "../api/tipos";
 import { PainelDeEvolucao } from "../componentes/PainelDeEvolucao";
+import { PainelDeForca } from "../componentes/PainelDeForca";
 import "../componentes/prescricao.css";
 import "./paginas.css";
 
@@ -162,6 +163,11 @@ export function FichaDoAluno() {
       <section className="pilha">
         <h2 className="rotulo">Evolução</h2>
         <PainelDeEvolucao alunoId={Number(id)} />
+      </section>
+
+      <section className="pilha">
+        <h2 className="rotulo">Força estimada</h2>
+        <PainelDeForca alunoId={Number(id)} />
       </section>
 
       <section className="painel pilha">

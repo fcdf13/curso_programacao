@@ -381,3 +381,146 @@ def teste_apagar_o_bloco_nao_apaga_o_que_o_aluno_levantou(
     # A prescrição citada some, mas o exercício e a carga continuam.
     assert depois["series"][0]["prescricao_id"] is None
     assert depois["series"][0]["exercicio_id"] == catalogo["exercicio"].id
+
+
+# ------------------------------------------------------- força e sugestão
+
+
+def registrar(cliente_do_aluno, treino_id, exercicio_id, series):
+    """Manda séries de um treino já aberto, com chaves distintas."""
+    corpo = {
+        "series": [
+            {
+                "chave_local": f"chave-{treino_id}-{i:03d}",
+                "ordem": i,
+                "exercicio_id": exercicio_id,
+                "reps": reps,
+                "carga_kg": carga,
+                "rir": rir,
+                "tipo": "valida",
+            }
+            for i, (reps, carga, rir) in enumerate(series)
+        ]
+    }
+    resposta = cliente_do_aluno.put(
+        f"/api/treinos-realizados/{treino_id}/series", json=corpo
+    )
+    assert resposta.status_code == 200, resposta.text
+    return resposta.json()
+
+
+@pytest.fixture
+def com_historico(cliente, filipe, treino, catalogo, sessao_de_banco):
+    """Dois treinos, uma semana de diferença, com o aluno mais forte no segundo."""
+    from jf.modelos import SessaoRealizada
+
+    aluno = cliente("filipe@exemplo.com")
+    exercicio = catalogo["exercicio"].id
+    hoje = date.today()
+
+    dias = [hoje - timedelta(days=7), hoje]
+    cargas = [[(8, 70.0, 1)], [(5, 85.0, 1)]]
+
+    for dia, series in zip(dias, cargas):
+        aberto = aluno.post(
+            f"/api/alunos/{filipe.id}/treinos-realizados",
+            json={"sessao_id": treino["sessao"]["id"], "dia": dia.isoformat()},
+        ).json()
+        registrar(aluno, aberto["id"], exercicio, series)
+
+    assert sessao_de_banco.query(SessaoRealizada).count() == 2
+    return {"exercicio_id": exercicio}
+
+
+def teste_a_forca_sai_do_que_foi_levantado(cliente, filipe, com_historico):
+    """8×70 estima 91,6 kg; 5×85 estima 100,5. É isso que o gráfico mostra."""
+    resposta = cliente("filipe@exemplo.com").get(
+        f"/api/alunos/{filipe.id}/forca/{com_historico['exercicio_id']}"
+    )
+    assert resposta.status_code == 200, resposta.text
+    corpo = resposta.json()
+
+    assert [p["e1rm"] for p in corpo["pontos"]] == [91.6, 100.5]
+    assert corpo["atual"]["e1rm"] == 100.5
+    assert corpo["variacao_kg"] == 8.9
+    # O ponto diz de qual série saiu, para dar para conferir.
+    assert (corpo["atual"]["reps"], corpo["atual"]["carga_kg"]) == (5, 85.0)
+
+
+def teste_o_resumo_lista_os_exercicios_com_registro(cliente, filipe, com_historico):
+    resumo = cliente("filipe@exemplo.com").get(f"/api/alunos/{filipe.id}/forca").json()
+    assert len(resumo) == 1
+    assert resumo[0]["exercicio_id"] == com_historico["exercicio_id"]
+    assert resumo[0]["atual"]["e1rm"] == 100.5
+
+
+def teste_sem_registro_a_forca_vem_vazia(cliente, filipe, catalogo):
+    corpo = cliente("filipe@exemplo.com").get(
+        f"/api/alunos/{filipe.id}/forca/{catalogo['exercicio'].id}"
+    ).json()
+    assert corpo["pontos"] == []
+    assert corpo["atual"] is None
+    assert corpo["variacao_kg"] is None
+
+
+def teste_o_treinador_ve_a_forca_do_aluno(cliente, joao, filipe, com_historico):
+    resposta = cliente(joao.email).get(
+        f"/api/alunos/{filipe.id}/forca/{com_historico['exercicio_id']}"
+    )
+    assert resposta.json()["atual"]["e1rm"] == 100.5
+
+
+def teste_carga_sugerida_sai_do_e1rm(cliente, joao, filipe, treino, com_historico):
+    """O ciclo fechando: o João marca 80% e o número sai do treino do aluno."""
+    treinador = cliente(joao.email)
+    treinador.put(
+        f"/api/prescricoes/{treino['prescricao']['id']}",
+        json={
+            "exercicio_id": com_historico["exercicio_id"],
+            "percentual_1rm": 80,
+        },
+    )
+
+    sugestoes = treinador.get(
+        f"/api/sessoes/{treino['sessao']['id']}/cargas-sugeridas"
+    ).json()
+
+    assert len(sugestoes) == 1
+    sugestao = sugestoes[0]
+    assert sugestao["e1rm"] == 100.5
+    assert sugestao["carga_kg"] == pytest.approx(80.4, abs=0.05)
+    # Arredondada para o que dá para montar na barra.
+    assert sugestao["carga_arredondada_kg"] == 80.0
+    assert sugestao["confiavel"] is True
+
+
+def teste_sem_percentual_nao_ha_sugestao(cliente, joao, treino, com_historico):
+    """A prescrição que não pede percentual não recebe palpite."""
+    sugestoes = cliente(joao.email).get(
+        f"/api/sessoes/{treino['sessao']['id']}/cargas-sugeridas"
+    ).json()
+    assert sugestoes == []
+
+
+def teste_sem_historico_nao_ha_sugestao(cliente, joao, filipe, treino, catalogo):
+    """Silêncio é a resposta certa: um número inventado aqui vira carga na barra."""
+    treinador = cliente(joao.email)
+    treinador.put(
+        f"/api/prescricoes/{treino['prescricao']['id']}",
+        json={"exercicio_id": catalogo["exercicio"].id, "percentual_1rm": 80},
+    )
+
+    sugestoes = treinador.get(
+        f"/api/sessoes/{treino['sessao']['id']}/cargas-sugeridas"
+    ).json()
+    assert sugestoes == []
+
+
+def teste_aluno_alheio_nao_ve_a_forca(cliente, criar_usuario, criar_aluno, filipe, com_historico):
+    outro = criar_usuario("Outro", "outro@exemplo.com", Papel.TREINADOR)
+    criar_aluno("Alheio", "alheio@exemplo.com", outro)
+
+    resposta = cliente("alheio@exemplo.com").get(
+        f"/api/alunos/{filipe.id}/forca/{com_historico['exercicio_id']}"
+    )
+    assert resposta.status_code == 404

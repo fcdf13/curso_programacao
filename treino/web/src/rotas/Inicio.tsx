@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { api, ErroDaApi } from "../api/cliente";
 import type { Aluno, PeriodizacaoNaLista } from "../api/tipos";
 import { PainelDeEvolucao } from "../componentes/PainelDeEvolucao";
+import { PainelDeForca } from "../componentes/PainelDeForca";
 import { useSessao } from "../sessao";
 import "../componentes/prescricao.css";
 import "./paginas.css";
@@ -111,6 +112,13 @@ export function Inicio() {
         <section className="pilha">
           <h2 className="rotulo">Sua evolução</h2>
           <PainelDeEvolucao alunoId={alunoId} />
+        </section>
+      )}
+
+      {alunoId !== null && (
+        <section className="pilha">
+          <h2 className="rotulo">Sua força</h2>
+          <PainelDeForca alunoId={alunoId} />
         </section>
       )}
 

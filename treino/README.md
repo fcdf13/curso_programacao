@@ -5,7 +5,8 @@ registra como a semana foi, o João prescreve o treino, e os dois veem a mesma
 evolução. O plano completo está em [`PLANO.md`](PLANO.md); para publicar, veja
 [`DEPLOY.md`](DEPLOY.md).
 
-**Fases 0 a 4 estão prontas, e a 2 fechou com o modo academia.** O aluno faz o check-in semanal e os dois veem a
+**Fases 0 a 4 estão prontas, a 2 fechou com o modo academia, e a 3 fechou de
+verdade: a carga sugerida agora sai do que o aluno levantou.** O aluno faz o check-in semanal e os dois veem a
 evolução em gráfico; o João monta a periodização com a progressão de carga série
 a série, usa a calculadora para escolher a carga e monta o protocolo alimentar
 com os grupos de substituição — que o aluno abre no celular e marca refeição a
@@ -61,7 +62,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 429 testes
+cd treino && python3 -m pytest      # 453 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -76,6 +77,7 @@ e só falha quando alguém troca o número na URL.
 ```
 jf/
   backup.py       cópia do banco, e o agendamento que a faz sozinha
+  progresso.py    e1RM ao longo do tempo, a partir das séries executadas
   validacao.py    traduz o 422 do Pydantic para uma frase que o aluno entenda
   forca.py        a equação de 1RM e o cálculo de carga (puro, sem I/O)
   leitura.py      lê a prescrição escrita à mão (puro, sem I/O)
@@ -108,11 +110,12 @@ web/
                   Dieta · ProtocoloAlimentar · Treinar
   src/componentes/EditorDePrescricao.tsx · EditorDeSeries.tsx ·
                   EditorDeProtocolo.tsx · PainelDeEvolucao.tsx ·
-                  CronometroDeDescanso.tsx · graficos/GraficoDeLinha.tsx
+                  PainelDeForca.tsx · CronometroDeDescanso.tsx ·
+                  graficos/GraficoDeLinha.tsx
   gerar-icones.py desenha os ícones do PWA a partir do monograma
 ```
 
-## Doze decisões que valem saber
+## Treze decisões que valem saber
 
 **A convenção de carga é dado de primeira classe.** Cada exercício declara se a
 carga é registrada como peso total (barra, incluindo a barra), por halter (o peso
@@ -150,6 +153,15 @@ quem responde na terça cairiam em linhas diferentes do gráfico, e um envio
 duplicado viraria um degrau falso. Semana sem resposta **some** da série em vez
 de virar zero: quem não pesou não pesa zero, e uma linha caindo até o eixo seria
 mentira.
+
+**A comparação da equação é por valor, não por identidade.** `Periodizacao.
+equacao` é uma coluna de texto — `"proposta"`, não `Equacao.PROPOSTA` — e o
+código comparava com `is`. A string nunca casava com nenhum ramo e caía calada
+no último `if` do arquivo: toda estimativa que passasse pelo banco em vez de
+vir direto do enum saía de Brzycki achando que era a equação do paper. Foi um
+teste do e1RM que achou isso, comparando o número que o gráfico mostrava com a
+conta feita à mão — é o tipo de erro que não quebra teste de rota nenhum e sai
+como carga errada na academia.
 
 **Trocar a senha derruba os outros aparelhos.** O cookie de sessão é assinado,
 mas o servidor não guarda lista de sessões abertas — então, sozinho, ele não é
@@ -218,10 +230,12 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
 - **As cópias de backup ficam no mesmo volume do banco.** O backup automático
   protege contra erro de software e engano humano; o volume inteiro se perder é
   outro risco, e levar uma cópia para fora ainda é manual (`jf backup`).
-- **A carga sugerida ainda não volta sozinha para a prescrição.** A calculadora
-  é uma tela à parte: o João lê o número e digita. Agora que o aluno registra as
-  séries executadas, o e1RM tem de onde sair — falta ligar os dois. O campo
-  `percentual_1rm` já está no banco esperando.
+- **A calculadora manual e a carga sugerida na prescrição são caminhos
+  separados.** O João continua podendo digitar carga × reps na calculadora para
+  simular um cenário; a carga automática (`GET /sessoes/{id}/cargas-sugeridas`)
+  só aparece quando a prescrição pede `percentual_1rm` **e** o aluno já tem
+  série registrada naquele exercício. As duas convivem de propósito — nem toda
+  prescrição precisa depender do histórico.
 - **O modo academia só abre treino que foi prescrito.** Treinar algo fora do
   plano não tem tela; o registro parte sempre de uma sessão da periodização.
 - **`Prescricao.ordem` não é reordenável pela tela.** Os exercícios saem na ordem

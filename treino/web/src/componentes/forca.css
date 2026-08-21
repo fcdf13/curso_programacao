@@ -1,0 +1,45 @@
+/* A lista de exercícios com o 1RM estimado. Feita para bater o olho: nome à
+   esquerda, número em destaque, variação como seta — e a seta tem sinal além
+   da cor, porque quem não distingue vermelho de verde precisa do mesmo dado. */
+
+.linha-de-forca {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--texto);
+  text-align: left;
+  cursor: pointer;
+}
+
+.forca-nome {
+  flex: 1 1 auto;
+  font-weight: 600;
+}
+
+.forca-numero {
+  font-family: var(--fonte-titulo);
+  font-size: 19px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.variacao {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.variacao.subiu {
+  color: var(--certo);
+}
+
+.variacao.caiu {
+  color: var(--atencao);
+}

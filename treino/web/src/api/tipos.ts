@@ -514,3 +514,35 @@ export interface TreinoNaLista {
   encerrada: boolean;
   tonelagem: number;
 }
+
+// -------------------------------------------------------------- força no tempo
+
+export interface PontoDeForca {
+  dia: string;
+  e1rm: number;
+  /** De qual série saiu — "86 kg (8 × 70)" dá para conferir, um número solto não. */
+  reps: number;
+  carga_kg: number;
+  confiavel: boolean;
+  ressalva: string | null;
+}
+
+export interface ForcaDoExercicio {
+  exercicio_id: number;
+  exercicio: string;
+  equacao: Equacao;
+  atual: PontoDeForca | null;
+  variacao_kg: number | null;
+  pontos: PontoDeForca[];
+}
+
+export interface CargaSugerida {
+  prescricao_id: number;
+  exercicio: string;
+  percentual_1rm: number;
+  e1rm: number;
+  carga_kg: number;
+  carga_arredondada_kg: number;
+  confiavel: boolean;
+  ressalva: string | null;
+}

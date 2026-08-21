@@ -94,6 +94,11 @@
   white-space: nowrap;
 }
 
+/* A carga que sai do e1RM, ao lado do percentual que o João marcou. */
+.prescricao-carga.sugestao {
+  color: var(--sangue);
+}
+
 .prescricao-detalhe {
   font-size: 12.5px;
   color: var(--texto-fraco);

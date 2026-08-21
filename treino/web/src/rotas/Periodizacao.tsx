@@ -8,7 +8,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { api, ErroDaApi } from "../api/cliente";
-import type { Exercicio, Periodizacao as Bloco, Prescricao, SessaoModelo, Tecnica } from "../api/tipos";
+import type {
+  CargaSugerida,
+  Exercicio,
+  Periodizacao as Bloco,
+  Prescricao,
+  SessaoModelo,
+  Tecnica,
+} from "../api/tipos";
 import { EditorDePrescricao } from "../componentes/EditorDePrescricao";
 import { EditorDeSeries } from "../componentes/EditorDeSeries";
 import { useSessao } from "../sessao";
@@ -184,6 +191,28 @@ function Treino({
 }: TreinoProps) {
   const abertoAqui = editando?.sessaoId === treino.id;
   const [seriesDe, definirSeriesDe] = useState<number | null>(null);
+  const [sugestoes, definirSugestoes] = useState<Record<number, CargaSugerida>>({});
+
+  const pedePercentual = treino.prescricoes.some((p) => p.percentual_1rm !== null);
+
+  useEffect(() => {
+    if (!pedePercentual) return;
+    let vivo = true;
+    api
+      .cargasSugeridas(treino.id)
+      .then((lista) => {
+        if (!vivo) return;
+        definirSugestoes(
+          Object.fromEntries(lista.map((s) => [s.prescricao_id, s])),
+        );
+      })
+      // Silenciosa: sem sugestão a tela mostra só o percentual, que já é
+      // informação — não vale um erro vermelho por cima de um extra.
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [treino.id, pedePercentual]);
 
   async function apagar(prescricao: Prescricao) {
     await api.apagarPrescricao(prescricao.id);
@@ -231,6 +260,7 @@ function Treino({
               <Linha
                 prescricao={prescricao}
                 podeEditar={podeEditar}
+                sugestao={sugestoes[prescricao.id]}
                 editandoSeries={seriesDe === prescricao.id}
                 aoEditar={() => definirEditando({ sessaoId: treino.id, prescricao })}
                 aoApagar={() => apagar(prescricao)}
@@ -298,6 +328,7 @@ function textoDaSerie(serie: Prescricao["series_detalhadas"][number]): string {
 function Linha({
   prescricao,
   podeEditar,
+  sugestao,
   editandoSeries,
   aoEditar,
   aoApagar,
@@ -305,6 +336,7 @@ function Linha({
 }: {
   prescricao: Prescricao;
   podeEditar: boolean;
+  sugestao?: CargaSugerida;
   editandoSeries: boolean;
   aoEditar: () => void;
   aoApagar: () => void;
@@ -333,6 +365,17 @@ function Linha({
             {prescricao.series} × {faixa}
             {prescricao.carga_alvo_kg !== null &&
               ` · ${numero(prescricao.carga_alvo_kg, 1)} kg`}
+          </span>
+        )}
+
+        {prescricao.percentual_1rm !== null && (
+          <span className="prescricao-carga sugestao">
+            {prescricao.percentual_1rm}% de 1RM
+            {sugestao !== undefined &&
+              ` · ${numero(sugestao.carga_arredondada_kg, 1)} kg`}
+            {sugestao !== undefined && !sugestao.confiavel && (
+              <span title={sugestao.ressalva ?? undefined}> ⚠</span>
+            )}
           </span>
         )}
 

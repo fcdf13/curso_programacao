@@ -306,3 +306,33 @@ def teste_a_tecnica_pesa_mais_que_as_outras_ressalvas():
     as outras enviesam o número, a técnica invalida a comparação."""
     resultado = estimar(100, 20, rir=5, tecnica_distorce=True)
     assert "técnica" in resultado.ressalva.lower()
+
+
+# ------------------------------------------- a equação que vem do banco
+
+
+def teste_a_equacao_aceita_a_string_que_o_banco_guarda():
+    """`Periodizacao.equacao` é coluna de texto, não enum.
+
+    Com comparação por identidade, `"proposta"` não casava com nenhum ramo e
+    caía calada na última equação do arquivo — a estimativa saía de Brzycki
+    achando que era a proposta, e ninguém tinha como perceber. É o tipo de erro
+    que não quebra teste de rota nenhum e sai como carga errada na academia.
+    """
+    for membro in Equacao:
+        assert estimar_1rm(70, 8, membro.value) == estimar_1rm(70, 8, membro)
+
+    assert estimar_1rm(70, 8, "proposta") == pytest.approx(91.6, abs=0.05)
+    assert estimar_1rm(70, 8, "brzycki") == pytest.approx(86.9, abs=0.05)
+
+
+def teste_equacao_desconhecida_falha_em_vez_de_escolher_outra():
+    with pytest.raises(ValueError):
+        estimar_1rm(70, 8, "a-que-eu-inventei")
+
+    with pytest.raises(ValueError):
+        carga_para(100, 8, "a-que-eu-inventei")
+
+
+def teste_carga_para_tambem_aceita_a_string():
+    assert carga_para(100, 8, "epley") == pytest.approx(carga_para(100, 8, Equacao.EPLEY))
