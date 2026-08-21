@@ -88,6 +88,9 @@ roda `jf preparar` no início, que aplica as migrações pendentes.
 | `JF_PRODUCAO` | `1` liga o cookie `Secure`, o HSTS, e fecha `/docs` e `/openapi.json`. |
 | `JF_BANCO` | URL do banco. Padrão: SQLite ao lado do código — troque por um caminho dentro do volume. |
 | `JF_DOMINIOS` | Domínios que o app aceita no `Host`, separados por vírgula. Sem isso ele responde a qualquer um. |
+| `JF_BACKUP_PASTA` | Liga o backup automático e diz onde guardar. Sem ela, ninguém copia nada. |
+| `JF_BACKUP_HORAS` | De quanto em quanto tempo copiar. Padrão: 24. |
+| `JF_BACKUP_MANTER` | Quantas cópias guardar antes de podar as velhas. Padrão: 14. |
 
 ## O banco
 
@@ -105,23 +108,44 @@ jf preparar
 
 ## Backup
 
-O histórico de treino de um atleta não tem como ser recriado. Copiar o arquivo
-com `cp` enquanto há escrita produz um banco corrompido que só se descobre na
-hora de restaurar, então use o comando — ele usa a API de backup do SQLite:
+O histórico de treino de um atleta não tem como ser recriado: se o arquivo se
+perder, as cargas de seis meses atrás não estão em lugar nenhum.
+
+**Defina `JF_BACKUP_PASTA`** e o próprio servidor passa a copiar sozinho — não
+há cron dentro do contêiner, então quem agenda é o processo do app:
 
 ```bash
-jf backup /caminho/backup-$(date +%F).db
+fly secrets set JF_BACKUP_PASTA=/dados/backups
 ```
 
-No Fly:
+Ele copia ao subir (se a última cópia já passou do intervalo), repete a cada
+`JF_BACKUP_HORAS` (padrão 24) e guarda as `JF_BACKUP_MANTER` mais recentes
+(padrão 14), apagando as velhas — sem poda, o disco enche e o app para de
+escrever no banco que o backup existe para proteger.
+
+O `jf doutor` mostra a idade da cópia mais recente e **avisa** quando ela passa
+do dobro do intervalo: um backup que parou em silêncio é pior que nenhum, porque
+passa a impressão de que existe.
+
+Para uma cópia agora, ou para levar uma para fora da máquina:
+
+```bash
+jf backup /caminho/backup-$(date +%F).db   # um arquivo
+jf backup /dados/backups/                  # nome datado + poda
+```
 
 ```bash
 fly ssh console -C "jf backup /dados/backup.db"
 fly sftp get /dados/backup.db
 ```
 
-Vale um cron semanal. **Ainda não existe backup automático** — é o item mais
-importante em aberto depois que o primeiro aluno real entrar.
+As cópias ficam **no mesmo volume do banco**, o que protege contra erro de
+software e engano humano, mas não contra o volume inteiro se perder. Levar uma
+cópia para fora de tempos em tempos continua sendo a diferença entre um susto e
+uma perda.
+
+Em Postgres nada disso roda: use `pg_dump` e o agendamento do seu provedor. O
+`jf doutor` diz isso em vez de fingir que está tudo coberto.
 
 ## A tabela nutricional
 
@@ -160,6 +184,7 @@ migrações, para ninguém descobrir isso no deploy.
 1. **Revisão jurídica do termo de consentimento.** O mecanismo está pronto e
    testado (`jf/dados/termo.md` e a tela **Meus dados**); o texto foi escrito
    por quem não é advogado e precisa ser conferido.
-2. **Backup automático.** `jf backup` existe, mas ninguém o chama sozinho.
+2. **Uma cópia do backup fora da máquina.** O automático protege contra erro de
+   software; o volume inteiro se perder é outro risco.
 3. **Limite de tentativas de login que sobreviva a reinício.** O de hoje vive
    na memória do processo.

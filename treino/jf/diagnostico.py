@@ -156,8 +156,70 @@ def _dominios() -> Achado:
     )
 
 
+def _backup() -> Achado:
+    """O histórico de um atleta não se recria: sem backup, perder é definitivo."""
+    from jf import backup
+
+    if backup.caminho_do_banco() is None:
+        return Achado(
+            "ok",
+            "Backup",
+            "O banco não é SQLite — use as ferramentas dele (pg_dump) e um "
+            "agendamento fora do app.",
+        )
+
+    pasta = backup.pasta_configurada()
+    if pasta is None:
+        return Achado(
+            "aviso" if config.producao else "ok",
+            "Backup automático desligado",
+            "Defina JF_BACKUP_PASTA para uma pasta dentro do volume — de "
+            "preferência não o mesmo disco do banco. Sem isso, perder o "
+            "arquivo é perder o histórico de treino de todos os alunos, que "
+            "não tem como ser recriado.",
+        )
+
+    if not pasta.is_dir():
+        return Achado(
+            "aviso",
+            "A pasta de backup ainda não existe",
+            f"{pasta} será criada na primeira cópia. Se ela não estiver dentro "
+            "de um volume, as cópias somem junto com o contêiner.",
+        )
+
+    desde = backup.idade(pasta)
+    if desde is None:
+        return Achado(
+            "aviso",
+            "Nenhuma cópia ainda",
+            f"{pasta} está vazia. A primeira sai quando o servidor subir; "
+            f"`jf backup {pasta}/` faz uma agora.",
+        )
+
+    horas = desde.total_seconds() / 3600
+    quantas = len(backup.copias(pasta))
+    cada = backup.intervalo().total_seconds() / 3600
+
+    # Uma cópia velha é pior que nenhuma: passa a impressão de que há backup.
+    if desde > backup.intervalo() * 2:
+        return Achado(
+            "aviso",
+            f"A cópia mais recente tem {horas:.0f} h",
+            f"Mais que o dobro do intervalo de {cada:.0f} h — o backup "
+            f"automático pode ter parado. Confira o log do servidor. "
+            f"({quantas} cópia(s) em {pasta}.)",
+        )
+
+    return Achado(
+        "ok",
+        "Backup automático",
+        f"{quantas} cópia(s) em {pasta}; a última tem {horas:.0f} h. "
+        f"Intervalo de {cada:.0f} h, guardando {backup.quantas_manter()}.",
+    )
+
+
 def examinar() -> list[Achado]:
-    return [_chave(), _producao(), _dominios(), *_banco(), _pwa()]
+    return [_chave(), _producao(), _dominios(), *_banco(), _backup(), _pwa()]
 
 
 def relatorio() -> tuple[str, bool]:

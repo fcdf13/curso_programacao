@@ -61,7 +61,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 372 testes
+cd treino && python3 -m pytest      # 387 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -75,6 +75,7 @@ e só falha quando alguém troca o número na URL.
 
 ```
 jf/
+  backup.py       cópia do banco, e o agendamento que a faz sozinha
   forca.py        a equação de 1RM e o cálculo de carga (puro, sem I/O)
   leitura.py      lê a prescrição escrita à mão (puro, sem I/O)
   dieta_texto.py  lê o protocolo alimentar escrito à mão (puro, sem I/O)
@@ -196,8 +197,9 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
   processo: segura o roteiro ingênuo, mas não sobrevive a reinício nem cobre um
   deploy com vários workers. Precisa de um limite no proxy ou de uma contagem
   compartilhada.
-- **Backup automático.** `jf backup` existe e faz cópia consistente, mas
-  ninguém o chama sozinho.
+- **As cópias de backup ficam no mesmo volume do banco.** O backup automático
+  protege contra erro de software e engano humano; o volume inteiro se perder é
+  outro risco, e levar uma cópia para fora ainda é manual (`jf backup`).
 - **A carga sugerida ainda não volta sozinha para a prescrição.** A calculadora é
   uma tela à parte: o João lê o número e digita. Ligar as duas depende do e1RM do
   aluno, que só existe quando ele registrar as séries executadas — fase 2 do lado

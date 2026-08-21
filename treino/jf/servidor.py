@@ -149,6 +149,13 @@ app = criar_app()
 def servir(host: str = "127.0.0.1", porta: int = 8770) -> None:
     import uvicorn
 
+    from jf.backup import agendar
+
+    # Fica no `servir`, e não no `criar_app`: os testes criam o app dezenas de
+    # vezes, e uma thread de backup por app seria um enxame copiando banco de
+    # teste. Quem serve de verdade passa por aqui uma vez só.
+    agendar()
+
     uvicorn.run(
         app,
         host=host,

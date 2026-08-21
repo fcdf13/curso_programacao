@@ -149,34 +149,33 @@ def doutor(_: argparse.Namespace) -> int:
 def backup(argumentos: argparse.Namespace) -> int:
     """Cópia consistente do banco, com o app rodando.
 
-    Usa a API de backup do próprio SQLite em vez de `cp`: copiar o arquivo
-    enquanto há escrita em andamento produz um banco corrompido que só se
-    descobre na hora de restaurar.
+    O destino pode ser um arquivo ou uma pasta. Sendo pasta, o nome sai datado
+    e as cópias velhas são podadas — é o mesmo caminho que o backup automático
+    usa, para não haver dois jeitos de fazer a mesma coisa.
     """
-    import sqlite3
     from pathlib import Path
 
-    from jf.config import config
-
-    if not config.banco_url.startswith("sqlite"):
-        print(
-            "Este comando é do SQLite. Em Postgres, use `pg_dump`.",
-            file=sys.stderr,
-        )
-        return 1
-
-    origem = config.banco_url.replace("sqlite:///", "").replace("sqlite://", "")
-    if not origem or not Path(origem).is_file():
-        print(f"Não encontrei o banco em {origem!r}.", file=sys.stderr)
-        return 1
+    from jf import backup as copia
 
     destino = Path(argumentos.destino)
-    destino.parent.mkdir(parents=True, exist_ok=True)
+    ehPasta = destino.is_dir() or argumentos.destino.endswith("/")
 
-    with sqlite3.connect(origem) as de, sqlite3.connect(destino) as para:
-        de.backup(para)
+    try:
+        if ehPasta:
+            feito = copia.rodar(destino, manter=argumentos.manter)
+        else:
+            feito = copia.copiar(destino)
+    except ValueError as erro:
+        print(str(erro), file=sys.stderr)
+        return 1
+    except FileNotFoundError as erro:
+        print(str(erro), file=sys.stderr)
+        return 1
 
-    print(f"{destino} — {destino.stat().st_size / 1024:.0f} kB")
+    print(f"{feito} — {feito.stat().st_size / 1024:.0f} kB")
+    if ehPasta:
+        guardadas = copia.copias(destino)
+        print(f"{len(guardadas)} cópia(s) na pasta.")
     return 0
 
 
@@ -223,7 +222,13 @@ def main(argv: list[str] | None = None) -> int:
     ).set_defaults(funcao=doutor)
 
     copia = comandos.add_parser("backup", help="cópia consistente do banco")
-    copia.add_argument("destino")
+    copia.add_argument("destino", help="arquivo, ou pasta para nome datado + poda")
+    copia.add_argument(
+        "--manter",
+        type=int,
+        default=14,
+        help="quantas cópias guardar quando o destino é pasta (padrão: 14)",
+    )
     copia.set_defaults(funcao=backup)
 
     servidor = comandos.add_parser("servir", help="sobe a API e o app")
