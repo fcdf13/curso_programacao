@@ -7,6 +7,7 @@ from pathlib import Path
 import os
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -23,6 +24,7 @@ from jf.api import (
     treinos,
 )
 from jf.config import WEB, config
+from jf.validacao import tratar as tratar_validacao
 
 DURACAO_DA_SESSAO = 60 * 60 * 24 * 30  # 30 dias
 
@@ -61,6 +63,11 @@ def criar_app() -> FastAPI:
         redoc_url=None,
         openapi_url=None if config.producao else "/openapi.json",
     )
+
+    # O 422 do Pydantic sai em inglês e com o nome cru do campo. Quem lê é o
+    # aluno no vestiário; ver "Input should be less than 400" é o mesmo que não
+    # ver nada.
+    app.add_exception_handler(RequestValidationError, tratar_validacao)
 
     @app.middleware("http")
     async def cabecalhos_de_seguranca(request: Request, seguir):

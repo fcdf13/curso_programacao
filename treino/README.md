@@ -61,7 +61,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 387 testes
+cd treino && python3 -m pytest      # 412 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -76,6 +76,7 @@ e só falha quando alguém troca o número na URL.
 ```
 jf/
   backup.py       cópia do banco, e o agendamento que a faz sozinha
+  validacao.py    traduz o 422 do Pydantic para uma frase que o aluno entenda
   forca.py        a equação de 1RM e o cálculo de carga (puro, sem I/O)
   leitura.py      lê a prescrição escrita à mão (puro, sem I/O)
   dieta_texto.py  lê o protocolo alimentar escrito à mão (puro, sem I/O)
@@ -214,9 +215,11 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
   cobre o que a LGPD exige e está em português claro, mas foi escrito por quem
   não é advogado. O mecanismo (pedir, registrar, exportar, apagar) está testado;
   o texto é um ponto de partida.
-- **As mensagens de validação saem em inglês.** Um peso fora da faixa devolve o
-  texto padrão do Pydantic ("Input should be less than 400"), não uma frase em
-  português. A tela mostra o que o servidor manda.
+- **O aviso de campo numérico fora da faixa vem do navegador, não do app.**
+  Um `<input max="400">` é barrado antes do envio, e o texto do balãozinho sai
+  no idioma do navegador — em português num aparelho em português. As mensagens
+  do servidor (`jf/validacao.py`) cobrem o resto: datas, email, regras entre
+  campos e qualquer cliente que não seja o formulário.
 - **O catálogo de alimentos não está preenchido.** O esquema, a importação e a
   busca existem e estão testados, mas nenhuma tabela nutricional acompanha o
   repositório — é preciso rodar `jf importar-alimentos` com a TACO ou o Open

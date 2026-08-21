@@ -76,7 +76,7 @@ class NovoAluno(BaseModel):
     sexo: Sexo | None = None
     altura_cm: float | None = Field(default=None, gt=50, lt=260)
     objetivo: str | None = Field(default=None, max_length=200)
-    observacoes: str | None = None
+    observacoes: str | None = Field(default=None, max_length=2000)
 
 
 class EdicaoDoAluno(BaseModel):
@@ -84,7 +84,7 @@ class EdicaoDoAluno(BaseModel):
     sexo: Sexo | None = None
     altura_cm: float | None = Field(default=None, gt=50, lt=260)
     objetivo: str | None = Field(default=None, max_length=200)
-    observacoes: str | None = None
+    observacoes: str | None = Field(default=None, max_length=2000)
 
 
 class AlunoEmResposta(BaseModel):
@@ -194,7 +194,7 @@ class SessaoModeloBase(BaseModel):
     nome: str = Field(min_length=1, max_length=120)
     ordem: int = 0
     dia_da_semana: int | None = Field(default=None, ge=0, le=6)
-    observacoes: str | None = None
+    observacoes: str | None = Field(default=None, max_length=2000)
 
 
 class NovaSessaoModelo(SessaoModeloBase):
@@ -223,7 +223,7 @@ class PeriodizacaoBase(BaseModel):
     semanas: int = Field(default=4, ge=1, le=52)
     equacao: Equacao = Equacao.PROPOSTA
     ativa: bool = True
-    observacoes: str | None = None
+    observacoes: str | None = Field(default=None, max_length=2000)
 
 
 class NovaPeriodizacao(PeriodizacaoBase):
@@ -238,7 +238,7 @@ class EdicaoDaPeriodizacao(BaseModel):
     semanas: int | None = Field(default=None, ge=1, le=52)
     equacao: Equacao | None = None
     ativa: bool | None = None
-    observacoes: str | None = None
+    observacoes: str | None = Field(default=None, max_length=2000)
 
 
 class PeriodizacaoEmResposta(PeriodizacaoBase):
@@ -422,7 +422,9 @@ class CheckinBase(BaseModel):
     aderencia_dieta: int | None = Field(default=None, ge=0, le=100)
     aderencia_treino: int | None = Field(default=None, ge=0, le=100)
 
-    observacoes: str | None = None
+    # Texto livre precisa de teto: `Text` no banco aceita megabytes, e um
+    # campo sem limite é armazenamento ilimitado a pedido de quem manda o POST.
+    observacoes: str | None = Field(default=None, max_length=2000)
     medidas: MedidasBase | None = None
 
     @model_validator(mode="after")
