@@ -2,7 +2,8 @@
 
 App de acompanhamento entre o treinador **João Filho** e seus alunos. O aluno
 registra como a semana foi, o João prescreve o treino, e os dois veem a mesma
-evolução. O plano completo está em [`PLANO.md`](PLANO.md).
+evolução. O plano completo está em [`PLANO.md`](PLANO.md); para publicar, veja
+[`DEPLOY.md`](DEPLOY.md).
 
 **Fases 0 a 3 estão prontas.** O aluno faz o check-in semanal e os dois veem a
 evolução em gráfico; o João monta a periodização com a progressão de carga série
@@ -57,7 +58,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 267 testes
+cd treino && python3 -m pytest      # 276 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -73,6 +74,8 @@ e só falha quando alguém troca o número na URL.
 jf/
   forca.py        a equação de 1RM e o cálculo de carga (puro, sem I/O)
   leitura.py      lê a prescrição escrita à mão (puro, sem I/O)
+  diagnostico.py  o `jf doutor` — confere a configuração antes de subir
+  migracoes/      Alembic: uma revisão por mudança de esquema
   modelos.py      Usuario, Aluno, Exercicio, Tecnica, Periodizacao,
                   SessaoModelo, Prescricao, SerieDaPrescricao,
                   CheckinSemanal, MedidaCorporal
@@ -84,7 +87,8 @@ jf/
   dados/          catálogos de exercícios e técnicas, semeadura e a
                   demonstração
   servidor.py     a API em /api e o PWA no resto
-  cli.py          jf preparar · jf treinador · jf servir
+  cli.py          jf preparar · jf treinador · jf demonstracao ·
+                  jf doutor · jf backup · jf servir
 web/
   src/estilo/     tokens da marca (preto, vermelho-sangue, osso)
   src/api/        cliente e tipos, espelhando jf/esquemas.py
@@ -147,10 +151,10 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
   não há tela para trocá-la nem fluxo de "esqueci minha senha".
 - **Limite de tentativas de login.** O freio em `auth.py` vive na memória do
   processo: segura o roteiro ingênuo, mas não sobrevive a reinício nem cobre um
-  deploy com vários workers. A fase 5 precisa de um limite no proxy ou de uma
-  contagem compartilhada.
-- **Migrações.** `criar_tabelas()` só cria o que falta. Quando houver dado real
-  de aluno para preservar, entra Alembic.
+  deploy com vários workers. Precisa de um limite no proxy ou de uma contagem
+  compartilhada.
+- **Backup automático.** `jf backup` existe e faz cópia consistente, mas
+  ninguém o chama sozinho.
 - **A carga sugerida ainda não volta sozinha para a prescrição.** A calculadora é
   uma tela à parte: o João lê o número e digita. Ligar as duas depende do e1RM do
   aluno, que só existe quando ele registrar as séries executadas — fase 2 do lado

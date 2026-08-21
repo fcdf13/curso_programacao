@@ -14,10 +14,13 @@ dependencies = [
     "pydantic[email]>=2.9",
     "argon2-cffi>=23.1",   # hash de senha
     "itsdangerous>=2.2",   # assina o cookie de sessão (SessionMiddleware)
+    "alembic>=1.13",       # migrações — o esquema muda com dado de aluno dentro
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "httpx>=0.27"]
+# Só para quem for rodar em Postgres. Em SQLite não é preciso instalar.
+postgres = ["psycopg[binary]>=3.1"]
 
 [project.scripts]
 jf = "jf.cli:main"
@@ -26,7 +29,12 @@ jf = "jf.cli:main"
 include = ["jf*"]
 
 [tool.setuptools.package-data]
-jf = ["dados/*.csv"]
+jf = [
+    "dados/*.csv",
+    "migracoes/*.ini",
+    "migracoes/*.mako",
+    "migracoes/versoes/*.py",
+]
 
 [tool.pytest.ini_options]
 # Testes em português, como no resto do repositório.

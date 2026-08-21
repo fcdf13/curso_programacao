@@ -1,0 +1,44 @@
+# Fly.io. Ajuste `app` e `primary_region` e rode:
+#
+#     fly launch --no-deploy --copy-config
+#     fly volumes create dados --size 1 --region gru
+#     fly secrets set JF_CHAVE_SECRETA="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+#     fly deploy
+#
+# Depois, para criar a conta do treinador:
+#     fly ssh console -C "jf treinador 'João Filho' joao@exemplo.com --senha '...'"
+
+app = "jf-treino"
+primary_region = "gru"          # São Paulo — o aluno está no Brasil
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  JF_PRODUCAO = "1"
+  # Dentro do volume, não do contêiner: o sistema de arquivos do contêiner é
+  # recriado a cada deploy, e o histórico do aluno iria junto.
+  JF_BANCO = "sqlite:////dados/jf.db"
+
+[[mounts]]
+  source = "dados"
+  destination = "/dados"
+
+[http_service]
+  internal_port = 8770
+  force_https = true            # PWA não instala nem recebe push sem HTTPS
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  # Uma máquina só: o SQLite vive num volume, que não se compartilha entre
+  # instâncias. Para escalar horizontalmente, primeiro troque para Postgres.
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    path = "/api/saude"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

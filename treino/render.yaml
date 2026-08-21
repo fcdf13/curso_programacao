@@ -1,0 +1,27 @@
+# Render. Suba o repositório, aponte para este arquivo em Blueprints e defina
+# JF_CHAVE_SECRETA no painel (marcado abaixo como `sync: false`, para não ficar
+# escrito no repositório).
+#
+# Depois, para criar a conta do treinador, use o Shell do serviço:
+#     jf treinador "João Filho" joao@exemplo.com
+
+services:
+  - type: web
+    name: jf-treino
+    runtime: docker
+    dockerfilePath: ./treino/Dockerfile
+    dockerContext: ./treino
+    region: oregon
+    plan: starter          # o plano gratuito não tem disco persistente
+    healthCheckPath: /api/saude
+    envVars:
+      - key: JF_PRODUCAO
+        value: "1"
+      - key: JF_BANCO
+        value: sqlite:////dados/jf.db
+      - key: JF_CHAVE_SECRETA
+        sync: false        # definida no painel, nunca no repositório
+    disk:
+      name: dados
+      mountPath: /dados
+      sizeGB: 1
