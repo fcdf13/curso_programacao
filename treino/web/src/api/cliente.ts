@@ -6,7 +6,9 @@ import type {
   Evolucao,
   Exercicio,
   EscopoDaTecnica,
+  EstadoDoConsentimento,
   Leitura,
+  MeusDados,
   NovaPrescricao,
   NovaSerie,
   NovoAluno,
@@ -20,6 +22,7 @@ import type {
   RespostaDaCalculadora,
   SessaoModelo,
   Tecnica,
+  Termo,
 } from "./tipos";
 
 export class ErroDaApi extends Error {
@@ -155,6 +158,26 @@ export const api = {
 
   evolucao: (alunoId: number, semanas = 26) =>
     pedir<Evolucao>(`/alunos/${alunoId}/evolucao?semanas=${semanas}`),
+
+  // ------------------------------------------------------- privacidade
+
+  /** Público: dá para ler antes de aceitar, e antes de ter conta. */
+  termo: () => pedir<Termo>("/termo"),
+
+  consentimento: () => pedir<EstadoDoConsentimento>("/eu/consentimento"),
+
+  consentir: () =>
+    pedir<EstadoDoConsentimento>("/eu/consentimento", { method: "POST" }),
+
+  revogarConsentimento: () =>
+    pedir<EstadoDoConsentimento>("/eu/consentimento", { method: "DELETE" }),
+
+  meusDados: () => pedir<MeusDados>("/eu/dados"),
+
+  apagarMinhaConta: (confirmacao: string) =>
+    pedir<void>(`/eu?confirmacao=${encodeURIComponent(confirmacao)}`, {
+      method: "DELETE",
+    }),
 
   // -------------------------------------------------------- calculadora
 

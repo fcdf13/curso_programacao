@@ -58,7 +58,7 @@ desenvolver, derruba a sessão a cada reinício. Em produção (`JF_PRODUCAO=1`)
 ## Verificar
 
 ```bash
-cd treino && python3 -m pytest      # 276 testes
+cd treino && python3 -m pytest      # 296 testes
 cd treino/web && npm run verificar  # tsc
 ```
 
@@ -74,6 +74,7 @@ e só falha quando alguém troca o número na URL.
 jf/
   forca.py        a equação de 1RM e o cálculo de carga (puro, sem I/O)
   leitura.py      lê a prescrição escrita à mão (puro, sem I/O)
+  privacidade.py  o termo e a versão dele (o hash do próprio texto)
   diagnostico.py  o `jf doutor` — confere a configuração antes de subir
   migracoes/      Alembic: uma revisão por mudança de esquema
   modelos.py      Usuario, Aluno, Exercicio, Tecnica, Periodizacao,
@@ -83,7 +84,7 @@ jf/
   banco.py        engine e sessão do SQLAlchemy
   esquemas.py     o que entra e sai da API (Pydantic)
   api/            sessao · alunos · exercicios · treinos · checkins ·
-                  calculadora
+                  privacidade · calculadora
   dados/          catálogos de exercícios e técnicas, semeadura e a
                   demonstração
   servidor.py     a API em /api e o PWA no resto
@@ -93,13 +94,13 @@ web/
   src/estilo/     tokens da marca (preto, vermelho-sangue, osso)
   src/api/        cliente e tipos, espelhando jf/esquemas.py
   src/rotas/      Entrar · Alunos · FichaDoAluno · Periodizacao ·
-                  Calculadora · Checkin · Inicio · Catalogo
+                  Calculadora · Checkin · MeusDados · Inicio · Catalogo
   src/componentes/EditorDePrescricao.tsx · EditorDeSeries.tsx ·
                   PainelDeEvolucao.tsx · graficos/GraficoDeLinha.tsx
   gerar-icones.py desenha os ícones do PWA a partir do monograma
 ```
 
-## Seis decisões que valem saber
+## Sete decisões que valem saber
 
 **A convenção de carga é dado de primeira classe.** Cada exercício declara se a
 carga é registrada como peso total (barra, incluindo a barra), por halter (o peso
@@ -138,6 +139,13 @@ duplicado viraria um degrau falso. Semana sem resposta **some** da série em vez
 de virar zero: quem não pesou não pesa zero, e uma linha caindo até o eixo seria
 mentira.
 
+**A versão do termo de consentimento é o hash do próprio texto.** Editar o
+termo muda a versão sozinho, o consentimento anterior deixa de valer, e o app
+volta a perguntar — que é o que a LGPD pede, já que o consentimento é específico
+para uma finalidade (art. 8º §4º). Um número que alguém precisa lembrar de
+incrementar acabaria esquecido, e consentimentos antigos passariam a valer para
+um texto que ninguém leu.
+
 **A equação proposta tem um piso que o paper não menciona.** O guard `k(w) ≥ 0,5`
 publicado impede a divisão por zero, mas abaixo de ~4,74 kg a equação *inverte de
 sentido*: 2 kg por 8 repetições estima 18,7 kg de 1RM e 3 kg pelas mesmas 8
@@ -165,10 +173,10 @@ o app cai para Epley nesse trecho e diz que caiu. Ver `CARGA_MINIMA_PROPOSTA` em
   `12x50kg` funciona; colar o bloco com os nomes dos exercícios não, porque
   casar "Cadeira abdutora vermelha" com o catálogo pede busca aproximada. As
   linhas que ele não entende voltam com o motivo, em vez de sumirem.
-- **Consentimento LGPD, exportar e apagar os próprios dados.** Peso, sono e
-  medidas são dado sensível de saúde e já estão sendo guardados; o consentimento
-  no cadastro e o botão de exportar/apagar ainda não existem. É a dívida mais
-  urgente antes de qualquer aluno real entrar.
+- **O termo precisa passar por um advogado.** O texto em `jf/dados/termo.md`
+  cobre o que a LGPD exige e está em português claro, mas foi escrito por quem
+  não é advogado. O mecanismo (pedir, registrar, exportar, apagar) está testado;
+  o texto é um ponto de partida.
 - **As mensagens de validação saem em inglês.** Um peso fora da faixa devolve o
   texto padrão do Pydantic ("Input should be less than 400"), não uma frase em
   português. A tela mostra o que o servidor manda.

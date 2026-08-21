@@ -16,9 +16,11 @@ from jf.auth import hash_de_senha
 from jf.config import config
 from jf.dados import semear_tudo
 from jf.leitura import ler
+from jf.privacidade import versao_do_termo
 from jf.modelos import (
     Aluno,
     CheckinSemanal,
+    Consentimento,
     MedidaCorporal,
     Exercicio,
     FaseDaPeriodizacao,
@@ -209,6 +211,12 @@ def montar(sessao: Session) -> dict[str, str]:
     )
     sessao.add(aluno)
     sessao.flush()
+
+    # Sem isto o app recusaria os check-ins da demonstração — que é exatamente
+    # o comportamento certo, e por isso a demonstração aceita o termo.
+    sessao.add(
+        Consentimento(usuario_id=filipe_usuario.id, versao_do_termo=versao_do_termo())
+    )
 
     bloco = Periodizacao(
         aluno_id=aluno.id,

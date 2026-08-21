@@ -12,7 +12,15 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from jf.api import alunos, calculadora, checkins, exercicios, sessao, treinos
+from jf.api import (
+    alunos,
+    calculadora,
+    checkins,
+    exercicios,
+    privacidade,
+    sessao,
+    treinos,
+)
 from jf.config import WEB, config
 
 DURACAO_DA_SESSAO = 60 * 60 * 24 * 30  # 30 dias
@@ -97,6 +105,7 @@ def criar_app() -> FastAPI:
     api.include_router(exercicios.rotas)
     api.include_router(treinos.rotas)
     api.include_router(checkins.rotas)
+    api.include_router(privacidade.rotas)
     api.include_router(calculadora.rotas)
     # Depois de todas as rotas: o que se registra num router após a inclusão
     # não entra no app.

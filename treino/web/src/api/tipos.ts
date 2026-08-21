@@ -277,3 +277,26 @@ export interface Evolucao {
   series: SerieDoGrafico[];
   variacao: Record<string, number>;
 }
+
+// ---------------------------------------------------------------- privacidade
+
+export interface Termo {
+  /** Hash do próprio texto: editar o termo muda a versão sozinho. */
+  versao: string;
+  texto: string;
+}
+
+export interface EstadoDoConsentimento {
+  versao_atual: string;
+  consentido: boolean;
+  aceito_em: string | null;
+  /** Aceitou uma versão anterior e o texto mudou — diferente de nunca aceitar. */
+  precisa_reaceitar: boolean;
+}
+
+export interface MeusDados {
+  exportado_em: string;
+  conta: Record<string, unknown>;
+  consentimentos: Record<string, unknown>[];
+  aluno: Record<string, unknown> | null;
+}

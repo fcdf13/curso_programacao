@@ -16,7 +16,8 @@ from sqlalchemy.orm import sessionmaker  # noqa: E402
 
 from jf import banco  # noqa: E402
 from jf.auth import hash_de_senha  # noqa: E402
-from jf.modelos import Aluno, Base, Papel, Usuario  # noqa: E402
+from jf.modelos import Aluno, Base, Consentimento, Papel, Usuario  # noqa: E402
+from jf.privacidade import versao_do_termo  # noqa: E402
 from jf.servidor import criar_app  # noqa: E402
 
 SENHA = "senha-de-teste-123"
@@ -77,10 +78,23 @@ def criar_usuario(sessao_de_banco):
 
 @pytest.fixture
 def criar_aluno(sessao_de_banco, criar_usuario):
-    def criar(nome: str, email: str, treinador: Usuario) -> Aluno:
+    """Cria um aluno já com o termo aceito.
+
+    O consentimento é pré-requisito para gravar dado de saúde, então sem ele a
+    maioria dos testes falharia por um motivo que não é o assunto deles. Quem
+    testa o próprio consentimento passa `consentiu=False`.
+    """
+
+    def criar(
+        nome: str, email: str, treinador: Usuario, consentiu: bool = True
+    ) -> Aluno:
         usuario = criar_usuario(nome, email, Papel.ALUNO)
         aluno = Aluno(usuario_id=usuario.id, treinador_id=treinador.id)
         sessao_de_banco.add(aluno)
+        if consentiu:
+            sessao_de_banco.add(
+                Consentimento(usuario_id=usuario.id, versao_do_termo=versao_do_termo())
+            )
         sessao_de_banco.commit()
         return aluno
 

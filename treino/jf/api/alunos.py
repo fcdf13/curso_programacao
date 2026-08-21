@@ -7,7 +7,13 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from jf.auth import aluno_permitido, hash_de_senha, normalizar_email, treinador_atual
+from jf.auth import (
+    aluno_permitido,
+    consentimento_em_dia,
+    hash_de_senha,
+    normalizar_email,
+    treinador_atual,
+)
 from jf.banco import obter_sessao
 from jf.esquemas import AlunoEmResposta, EdicaoDoAluno, NovoAluno
 from jf.modelos import Aluno, Papel, Usuario
@@ -90,6 +96,7 @@ def detalhar(aluno: Aluno = Depends(aluno_permitido)) -> AlunoEmResposta:
 def editar(
     dados: EdicaoDoAluno,
     aluno: Aluno = Depends(aluno_permitido),
+    _: Usuario = Depends(consentimento_em_dia),
     sessao: Session = Depends(obter_sessao),
 ) -> AlunoEmResposta:
     # `exclude_unset` para que não mandar um campo signifique "deixa como está",

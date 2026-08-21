@@ -1,0 +1,85 @@
+.acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* A seção que apaga tudo fica marcada, mas sem gritar: o botão vermelho já
+   carrega o peso, e uma caixa inteira em alerta faria o resto da tela parecer
+   menos importante do que é. */
+.painel.perigo {
+  border-left: 3px solid var(--errado);
+}
+
+.botao.perigoso {
+  background: var(--errado);
+  color: var(--sobre-sangue);
+  border-color: transparent;
+}
+
+:root[data-tema="claro"] .botao.perigoso,
+:root:not([data-tema="escuro"]) .botao.perigoso {
+  background: #a3232a;
+}
+
+/* ------------------------------------------------------------------ o termo */
+
+.termo {
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  background: var(--fundo-fundo);
+  padding: 20px 22px;
+  max-height: 55vh;
+  overflow-y: auto;
+  /* Texto de leitura: mais estreito que o painel, para a linha não passar do
+     que o olho acompanha. */
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.termo h2 {
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+
+.termo h3 {
+  font-family: var(--fonte-titulo);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 20px 0 6px;
+  color: var(--sangue);
+}
+
+.termo p {
+  margin: 0 0 10px;
+  max-width: 62ch;
+}
+
+.termo ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.termo li {
+  margin: 0 0 5px;
+  max-width: 60ch;
+}
+
+.termo li::marker {
+  color: var(--sangue);
+}
+
+.termo em {
+  font-style: italic;
+  color: var(--texto-suave);
+}
+
+.termo-nota {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--borda);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--texto-fraco);
+}

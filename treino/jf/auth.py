@@ -151,6 +151,29 @@ def exigir_acesso(usuario: Usuario, aluno: Aluno | None) -> Aluno:
     return aluno
 
 
+def consentimento_em_dia(usuario: Usuario = Depends(usuario_atual)) -> Usuario:
+    """Barra a gravação de dado de saúde sem consentimento em vigor.
+
+    É isto que torna o consentimento real em vez de decorativo: sem ele o app
+    não *aceita* o dado, em vez de aceitar e depois pedir desculpa. O treinador
+    passa direto — ele é o controlador, não o titular, e a base legal do
+    tratamento dele é o contrato com o aluno.
+
+    Só a escrita passa por aqui. Ler o que já está guardado é um direito do
+    titular (art. 18, II), não um tratamento novo que precise de permissão.
+    """
+    if usuario.papel is Papel.TREINADOR:
+        return usuario
+
+    if usuario.consentimento_ativo is None:
+        raise HTTPException(
+            status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
+            "Aceite o termo de uso dos dados antes de registrar peso, sono ou "
+            "medidas. Você encontra o termo em Meus dados.",
+        )
+    return usuario
+
+
 def aluno_permitido(
     aluno_id: int,
     usuario: Usuario = Depends(usuario_atual),

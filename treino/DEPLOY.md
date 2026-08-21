@@ -143,8 +143,9 @@ migrações, para ninguém descobrir isso no deploy.
 
 ## O que ainda falta antes de um aluno real
 
-1. **Consentimento LGPD e exportar/apagar os próprios dados.** Peso, sono e
-   medidas são dado sensível de saúde, e o app já os guarda.
-2. **Backup automático.** Hoje é manual.
+1. **Revisão jurídica do termo de consentimento.** O mecanismo está pronto e
+   testado (`jf/dados/termo.md` e a tela **Meus dados**); o texto foi escrito
+   por quem não é advogado e precisa ser conferido.
+2. **Backup automático.** `jf backup` existe, mas ninguém o chama sozinho.
 3. **Limite de tentativas de login que sobreviva a reinício.** O de hoje vive
    na memória do processo.

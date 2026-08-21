@@ -6,7 +6,7 @@ viram JSON direto, sempre passam por aqui.
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -460,3 +460,28 @@ class Evolucao(BaseModel):
     series: list[SerieDoGrafico]
     # O que mudou entre o primeiro e o último check-in, por série.
     variacao: dict[str, float]
+
+
+# --------------------------------------------------------------- privacidade
+
+
+class TermoEmResposta(BaseModel):
+    versao: str
+    texto: str
+
+
+class EstadoDoConsentimento(BaseModel):
+    versao_atual: str
+    consentido: bool
+    aceito_em: datetime | None = None
+    # `True` quando a pessoa aceitou uma versão anterior e o texto mudou — é
+    # uma conversa diferente de "nunca aceitou".
+    precisa_reaceitar: bool = False
+
+
+class MeusDados(BaseModel):
+    exportado_em: datetime
+    conta: dict
+    consentimentos: list[dict]
+    # Só quem é aluno tem histórico de treino e check-in.
+    aluno: dict | None = None

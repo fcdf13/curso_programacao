@@ -9,6 +9,7 @@ import { Checkin } from "./rotas/Checkin";
 import { Entrar } from "./rotas/Entrar";
 import { FichaDoAluno } from "./rotas/FichaDoAluno";
 import { Inicio } from "./rotas/Inicio";
+import { MeusDados } from "./rotas/MeusDados";
 import { Periodizacao } from "./rotas/Periodizacao";
 import { useSessao } from "./sessao";
 import type { Papel } from "./api/tipos";
@@ -98,6 +99,14 @@ export function App() {
           element={
             <Protegido papel="treinador">
               <Calculadora />
+            </Protegido>
+          }
+        />
+        <Route
+          path="/meus-dados"
+          element={
+            <Protegido>
+              <MeusDados />
             </Protegido>
           }
         />

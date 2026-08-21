@@ -43,9 +43,9 @@ export function Cabecalho() {
         </nav>
 
         <div className="cabecalho-conta">
-          <span className="cabecalho-nome" title={eu.usuario.email}>
+          <NavLink to="/meus-dados" className="cabecalho-nome" title={eu.usuario.email}>
             {eu.usuario.nome}
-          </span>
+          </NavLink>
           <button type="button" className="botao discreto" onClick={terminar}>
             Sair
           </button>

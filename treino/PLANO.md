@@ -224,7 +224,7 @@ mesmo formato de `app/src/estilo/tokens.css` — claro como base, escuro só red
 | 2 ◐ | ~~Periodização, prescrição~~ (feito), **modo academia**, registro de séries | Aluno treina lendo do celular e registra carga/reps/RIR |
 | 3 ◐ | ~~`forca.py`, carga sugerida, arredondamento~~ (feito), gráfico de e1RM | Testes do paper passam; João aceita a carga sugerida |
 | 4 | Protocolo alimentar, substituições, TACO/OFF, diário | O PDF do Filipe existe inteiro dentro do app |
-| 5 | Painel com alertas, sincronização offline, export LGPD, deploy | Rodando no domínio dele, com backup |
+| 5 ◐ | Painel com alertas, sincronização offline, ~~export LGPD~~ (feito), ~~empacotamento de deploy~~ (feito, ver [`DEPLOY.md`](DEPLOY.md)) | Rodando no domínio dele, com backup |
 
 **Modo academia** (fase 2) merece atenção: tela grande, botão grande, cronômetro de
 descanso, carga em destaque — e fila de sincronização em IndexedDB, porque subsolo de

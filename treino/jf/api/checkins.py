@@ -14,7 +14,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from jf.auth import aluno_permitido, exigir_acesso, usuario_atual
+from jf.auth import (
+    aluno_permitido,
+    consentimento_em_dia,
+    exigir_acesso,
+    usuario_atual,
+)
 from jf.banco import obter_sessao
 from jf.esquemas import (
     CheckinEmResposta,
@@ -98,6 +103,7 @@ def listar(
 def registrar(
     dados: NovoCheckin,
     aluno: Aluno = Depends(aluno_permitido),
+    _: Usuario = Depends(consentimento_em_dia),
     sessao: Session = Depends(obter_sessao),
 ) -> CheckinSemanal:
     checkin = CheckinSemanal(aluno_id=aluno.id)
@@ -123,6 +129,7 @@ def registrar(
 def editar(
     dados: NovoCheckin,
     checkin: CheckinSemanal = Depends(checkin_permitido),
+    _: Usuario = Depends(consentimento_em_dia),
     sessao: Session = Depends(obter_sessao),
 ) -> CheckinSemanal:
     _aplicar(checkin, dados, parcial=True)

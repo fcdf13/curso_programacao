@@ -85,6 +85,26 @@ class Usuario(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    consentimentos: Mapped[list["Consentimento"]] = relationship(
+        back_populates="usuario",
+        cascade="all, delete-orphan",
+        order_by="Consentimento.aceito_em",
+    )
+
+    @property
+    def consentimento_ativo(self) -> "Consentimento | None":
+        """O consentimento em vigor para a versão atual do termo.
+
+        Consentimento de uma versão antiga não conta: o texto mudou, então a
+        pessoa disse sim a outra coisa.
+        """
+        from jf.privacidade import versao_do_termo
+
+        atual = versao_do_termo()
+        for consentimento in reversed(self.consentimentos):
+            if consentimento.versao_do_termo == atual and consentimento.ativo:
+                return consentimento
+        return None
 
     def __repr__(self) -> str:
         return f"<Usuario {self.id} {self.email} {self.papel.value}>"
@@ -565,3 +585,43 @@ class MedidaCorporal(Base):
                 "braco_cm", "coxa_cm", "panturrilha_cm",
             )
         )
+
+
+# ============================================================ LGPD
+
+
+class Consentimento(Base):
+    """O registro de que alguém aceitou — ou revogou — o termo.
+
+    Guarda a versão aceita, não só a data: o termo muda com o tempo, e "aceitou
+    em março" não diz a que texto a pessoa disse sim. A LGPD trata o
+    consentimento como específico para uma finalidade (art. 8º §4º), então
+    texto novo pede consentimento novo.
+
+    O que *não* fica guardado: IP e user-agent. Eles teriam valor como prova,
+    mas são mais dado pessoal sobre alguém que acabou de pedir cuidado com os
+    dados dele — e o princípio da minimização (art. 6º, III) diz para não
+    coletar o que não é necessário.
+    """
+
+    __tablename__ = "consentimento"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(
+        ForeignKey("usuario.id", ondelete="CASCADE"), index=True
+    )
+    versao_do_termo: Mapped[str] = mapped_column(String(20), index=True)
+    aceito_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+    revogado_em: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
+
+    usuario: Mapped[Usuario] = relationship(back_populates="consentimentos")
+
+    @property
+    def ativo(self) -> bool:
+        return self.revogado_em is None
+
+    def __repr__(self) -> str:
+        estado = "ativo" if self.ativo else "revogado"
+        return f"<Consentimento {self.usuario_id} {self.versao_do_termo} {estado}>"

@@ -89,11 +89,32 @@
     padding: 8px 14px;
   }
 
-  .cabecalho-nome {
-    display: none;
-  }
-
   .cabecalho-marca .marca-texto {
     display: none;
   }
+
+  /* O nome do usuário não cabe, mas o caminho para "Meus dados" precisa
+     continuar existindo — vira só o rótulo. */
+  .cabecalho-nome {
+    max-width: none;
+    font-size: 0;
+  }
+
+  .cabecalho-nome::after {
+    content: "Dados";
+    font-size: 13px;
+    font-weight: 600;
+  }
+}
+
+/* O nome vira o caminho para "Meus dados": é onde se procura privacidade, e
+   evita mais um item competindo na navegação principal. */
+a.cabecalho-nome {
+  text-decoration: none;
+  padding: 4px 0;
+}
+
+a.cabecalho-nome:hover,
+a.cabecalho-nome.active {
+  color: var(--sangue);
 }
