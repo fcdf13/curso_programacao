@@ -4,7 +4,7 @@ Este arquivo é o mapa completo do currículo. O que está marcado ✅ já está
 com enunciado, testes, três dicas e gabarito. O resto é o roteiro para as próximas sessões
 de produção — a ideia é que ninguém precise re-decidir escopo, ordem ou nomenclatura.
 
-**Estado atual: 115 exercícios prontos** (109 do Bloco A + 6 vitrines), de ~560 planejados.
+**Estado atual: 123 exercícios prontos** (117 do Bloco A + 6 vitrines), de ~560 planejados.
 
 ---
 
@@ -57,14 +57,14 @@ linha. O objetivo é que o conhecimento transfira para o mercado.
 | A07 Revisão do bloco | 8 ✅ | oito problemas que combinam A1–A6 |
 | A08 Dicionários e conjuntos | 14 ✅ | acesso, `get`, `items`, contagem, merge, inversão, operações de conjunto |
 | A09 Complexidade e Big-O | 9 ✅ | reconhecer O(1)/O(n)/O(n²), lista × set, dict de última posição, prefix sum, `deque`, e 4 exercícios com teste **cronometrado** |
+| A10 Tuplas e desempacotamento | 8 ✅ | imutabilidade, `a, b = b, a`, `*resto`, tupla como chave de dict |
 
-### Bloco A — o que ainda falta (~65 exercícios)
+### Bloco A — o que ainda falta (~57 exercícios)
 
 Estes módulos completam o Bloco A antes de o Bloco B fazer pleno sentido:
 
 | módulo | exercícios | conteúdo |
 |---|---|---|
-| A10 Tuplas e desempacotamento | 8 | imutabilidade, `a, b = b, a`, retorno múltiplo, `*resto` |
 | A11 Funções | 16 | parâmetros padrão, `*args`/`**kwargs`, escopo, funções como valor |
 | A12 Compreensões | 12 | list/dict/set comp, filtro, aninhada, quando **não** usar |
 | A13 Erros e exceções | 10 | `try`/`except`/`else`/`finally`, `raise`, exceções comuns, EAFP × LBYL |
@@ -158,7 +158,7 @@ resolve um arquivo só por slug — o ponto exato a estender.
 
 ## Ordem sugerida de produção
 
-1. **A10–A17** (~65 ex.) — fecha o Bloco A; é o pré-requisito honesto para o Pandas.
+1. **A11–A17** (~57 ex.) — fecha o Bloco A; é o pré-requisito honesto para o Pandas.
 2. **B02–B10** (~90 ex.) — o Pandas do dia a dia.
 3. **C02–C09** (~100 ex.) — o SQL até subqueries; a partir daqui já dá para trabalhar.
 4. **B11–B15** e **C10–C12** — groupby, reshape, merge, CTEs e window functions,
