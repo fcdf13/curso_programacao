@@ -28,7 +28,7 @@ META = {
 
 
 def resolver(precos: list) -> list:
-    # Este é exatamente o padrão que a list comprehension do módulo A10 vai encurtar.
+    # Este é exatamente o padrão que a list comprehension do módulo A12 vai encurtar.
     reajustados = []
     for preco in precos:
         reajustados.append(round(preco * 1.1, 2))

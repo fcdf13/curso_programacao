@@ -30,7 +30,7 @@ META = {
 
 
 def resolver(nome: str) -> str:
-    # No módulo A10 você reescreve isto em uma linha com list comprehension.
+    # No módulo A12 você reescreve isto em uma linha com list comprehension.
     letras = []
     for palavra in nome.split():
         letras.append(palavra[0].upper())

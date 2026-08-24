@@ -27,7 +27,7 @@ META = {
 
 
 def resolver(itens: list, valor) -> int:
-    # Perguntar antes de agir evita a exceção — no módulo A11 você vê a alternativa com try/except.
+    # Perguntar antes de agir evita a exceção — no módulo A13 você vê a alternativa com try/except.
     if valor in itens:
         return itens.index(valor)
     return -1

@@ -1122,7 +1122,7 @@ def teste_com_negativos():
                 return itens.index(valor)
             return -1
             """,
-            nota_da_solucao="Perguntar antes de agir evita a exceção — no módulo A11 você vê a alternativa com try/except.",
+            nota_da_solucao="Perguntar antes de agir evita a exceção — no módulo A13 você vê a alternativa com try/except.",
             testes="""
 def teste_encontra_no_meio():
     verificar(ex.resolver(["a", "b", "c"], "b"), 1)
@@ -1624,7 +1624,7 @@ def teste_igual_ao_limite_nao_conta():
                 reajustados.append(round(preco * 1.1, 2))
             return reajustados
             """,
-            nota_da_solucao="Este é exatamente o padrão que a list comprehension do módulo A10 vai encurtar.",
+            nota_da_solucao="Este é exatamente o padrão que a list comprehension do módulo A12 vai encurtar.",
             testes="""
 def teste_dois_precos():
     verificar(ex.resolver([100, 50]), [110.0, 55.0])

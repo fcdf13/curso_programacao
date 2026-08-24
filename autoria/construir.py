@@ -22,6 +22,7 @@ from autoria import (
     a09_complexidade,
     a10_tuplas,
     a11_funcoes,
+    a12_compreensoes,
     vitrine,
 )
 from autoria.modelo import Modulo, materializar_modulo
@@ -35,6 +36,7 @@ MODULOS: list[Modulo] = [
     *a09_complexidade.MODULOS,
     *a10_tuplas.MODULOS,
     *a11_funcoes.MODULOS,
+    *a12_compreensoes.MODULOS,
     *vitrine.MODULOS,
 ]
 

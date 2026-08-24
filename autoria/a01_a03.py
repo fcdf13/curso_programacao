@@ -1502,7 +1502,7 @@ def teste_nao_conta_sobreposicao():
                 letras.append(palavra[0].upper())
             return ".".join(letras)
             """,
-            nota_da_solucao="No módulo A10 você reescreve isto em uma linha com list comprehension.",
+            nota_da_solucao="No módulo A12 você reescreve isto em uma linha com list comprehension.",
             testes="""
 def teste_tres_nomes():
     verificar(ex.resolver("ana souza lima"), "A.S.L")
