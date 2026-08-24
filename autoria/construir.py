@@ -14,7 +14,14 @@ import shutil
 import sys
 from pathlib import Path
 
-from autoria import a01_a03, a04_a06, a07_revisao, vitrine
+from autoria import (
+    a01_a03,
+    a04_a06,
+    a07_revisao,
+    a08_dicionarios_conjuntos,
+    a09_complexidade,
+    vitrine,
+)
 from autoria.modelo import Modulo, materializar_modulo
 from curso import caminhos
 
@@ -22,6 +29,8 @@ MODULOS: list[Modulo] = [
     *a01_a03.MODULOS,
     *a04_a06.MODULOS,
     *a07_revisao.MODULOS,
+    *a08_dicionarios_conjuntos.MODULOS,
+    *a09_complexidade.MODULOS,
     *vitrine.MODULOS,
 ]
 

@@ -19,17 +19,19 @@ import importlib.util
 import io
 import re
 import sys
-from contextlib import redirect_stdout
+import time
+from contextlib import contextmanager, redirect_stdout
 from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
 from curso import caminhos
 from curso.comparar import ErroDidatico, verificar  # noqa: F401  (re-exportado)
 
 __all__ = ["carregar", "carregar_sql", "verificar", "ErroDidatico",
-           "consultar", "banco", "tabela", "saida_de", "chamar"]
+           "consultar", "banco", "tabela", "saida_de", "chamar",
+           "verificar_tempo", "cronometrar"]
 
 RE_SQL_VAZIO = re.compile(r"^\s*(--[^\n]*\n|/\*.*?\*/|\s)*$", re.DOTALL)
 
@@ -219,6 +221,49 @@ def _traduzir_erro_sql(erro: Exception) -> str:
         if marca.lower() in bruto.lower():
             return cabecalho + pista
     return cabecalho
+
+
+@contextmanager
+def cronometrar() -> Iterator[dict]:
+    """Mede quanto tempo o bloco `with` levou.
+
+        with cronometrar() as t:
+            resultado = ex.resolver(entrada_grande)
+        verificar_tempo(t["segundos"], limite=1.0)
+
+    Separado em duas chamadas (medir, depois verificar) para o teste poder
+    conferir o resultado antes de reclamar da velocidade — errado e lento não
+    deveria mostrar só a mensagem de lento.
+    """
+    info: dict = {}
+    inicio = time.perf_counter()
+    try:
+        yield info
+    finally:
+        info["segundos"] = time.perf_counter() - inicio
+
+
+def verificar_tempo(segundos: float, limite: float, dica: str = "") -> None:
+    """Erro didático quando a solução é correta, mas lenta demais.
+
+    Existe para os exercícios do módulo de complexidade: a entrada é grande de
+    propósito, para que uma solução O(n²) estoure o limite enquanto uma O(n)
+    passe com folga. O limite é generoso (a diferença real costuma ser de
+    10x-100x), então isto não deveria pegar quem já resolveu com a técnica certa.
+    """
+    if segundos > limite:
+        texto = (
+            f"Sua solução dá o resultado certo, mas é lenta demais: levou "
+            f"{segundos:.2f}s para uma entrada onde o limite é {limite:.2f}s.\n\n"
+            "  Isso quase sempre quer dizer uma complexidade maior do que a\n"
+            "  necessária — o suspeito de sempre é uma busca linear (`x in lista`)\n"
+            "  rodando dentro de um laço, onde um dict ou set resolveria em O(1)."
+        )
+        if dica:
+            texto += f"\n\n  Dica: {dica}"
+        raise ErroDidatico(texto, {
+            "tipo": "solucao_lenta", "segundos": round(segundos, 3), "limite": limite,
+        })
 
 
 def tabela(nome: str):

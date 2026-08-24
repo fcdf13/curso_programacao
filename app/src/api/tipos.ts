@@ -77,7 +77,8 @@ export interface DadosDaFalha {
     | "indice_diferente"
     | "valores_diferentes"
     | "tipo_da_coluna"
-    | "tempo_esgotado";
+    | "tempo_esgotado"
+    | "solucao_lenta";
   esperado?: Tabela | unknown;
   obtido?: Tabela | unknown;
   celulas?: CelulaDivergente[];
@@ -92,6 +93,8 @@ export interface DadosDaFalha {
   indice_obtido?: unknown[];
   comparado_sem_ordem?: boolean;
   limite_s?: number;
+  segundos?: number;
+  limite?: number;
 }
 
 export interface ResultadoDaCorrecao {

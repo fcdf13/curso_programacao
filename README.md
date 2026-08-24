@@ -140,12 +140,12 @@ o banco transacional.
 
 | bloco | módulos | exercícios |
 |---|---|---|
-| **A — Python** | 7 de 16 | 86 ✅ |
+| **A — Python** | 9 de 17 | 109 ✅ |
 | **B — Pandas** | 17 | 3 de ~170 |
 | **C — SQL (DuckDB)** | 15 | 3 de ~170 |
 | **D — Ponte Pandas ↔ SQL** | 2 | ~40 |
 
-Os módulos A1–A7 estão completos — dá para estudar semanas com o que já está aqui.
+Os módulos A1–A9 estão completos — inclui um módulo de complexidade e Big-O (A9), com exercícios clássicos de entrevista (two-sum, deduplicação O(n), prefix sums, `deque` × `list.pop(0)`) e testes que cronometram a solução, não só conferem o resultado.
 Os blocos B, C e D têm exercícios-vitrine para você conferir o formato; o índice completo do que falta produzir está em [`PLANO_DO_CURSO.md`](PLANO_DO_CURSO.md).
 
 Cada módulo segue a mesma curva: **aquecimento** (quase guiados) → **prática** →
@@ -174,6 +174,15 @@ python -m autoria.construir --limpar    # regenera as três árvores
 Escrever assim é o que mantém 500 exercícios consistentes: todos com três dicas, todos com
 gabarito, todos com o mesmo estilo de teste.
 
+**Testes que cronometram a solução.** O módulo A9 (Big-O) usa
+`curso.teste.cronometrar()` e `verificar_tempo(segundos, limite, dica=...)` para
+reprovar uma solução correta, porém lenta demais — é assim que "isso é O(n²)" vira
+algo que se sente, não só se lê. Ao escrever um exercício desses, **meça os dois
+lados de verdade** (a solução ingênua e a eficiente, num script solto) antes de
+fixar o `limite=`; a diferença real costuma passar de 100x, então o limite cabe
+confortavelmente entre os dois, com folga para máquinas mais lentas que a sua.
+Nunca chute o número.
+
 ## Qualidade
 
 ```bash
@@ -185,7 +194,7 @@ npm --prefix app run e2e  # o navegador de verdade contra o servidor de verdade
 O `pytest --solucoes` é o portão que impede um enunciado impossível ou ambíguo de entrar no
 repositório. Nenhum exercício é adicionado sem esse verde.
 
-O verso disso também é verificado: com os esqueletos em branco, **os 92 exercícios reprovam**.
+O verso disso também é verificado: com os esqueletos em branco, **os 115 exercícios reprovam**.
 Um teste que passa sem código escrito não testa nada.
 
 O `e2e` sobe o Chromium contra o `curso web` real — sem mock: ele resolve exercícios,

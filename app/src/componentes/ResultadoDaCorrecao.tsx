@@ -28,6 +28,7 @@ const EXPLICACAO: Record<DadosDaFalha["tipo"], string> = {
   valores_diferentes: "A forma da tabela está certa, mas há valores diferentes.",
   tipo_da_coluna: "Os valores estão certos, mas o tipo da coluna não.",
   tempo_esgotado: "Seu código demorou demais e foi interrompido.",
+  solucao_lenta: "O resultado está certo, mas a solução é lenta demais.",
 };
 
 function Tabelas({ dados }: { dados: DadosDaFalha }) {
@@ -113,6 +114,14 @@ function Detalhe({ dados }: { dados: DadosDaFalha }) {
           coluna <code>{dados.coluna}</code>: esperado{" "}
           <code className="ok">{dados.tipo_esperado}</code>, obtido{" "}
           <code className="nao">{dados.tipo_obtido}</code>
+        </p>
+      );
+
+    case "solucao_lenta":
+      return (
+        <p className="linha-de-detalhe">
+          levou <code className="nao">{dados.segundos}s</code>, o limite é{" "}
+          <code className="ok">{dados.limite}s</code>
         </p>
       );
 
