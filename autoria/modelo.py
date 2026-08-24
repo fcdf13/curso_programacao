@@ -24,6 +24,7 @@ MODULOS: dict[str, str] = {
     "A10": "01_python/10_tuplas_e_desempacotamento",
     "A11": "01_python/11_funcoes",
     "A12": "01_python/12_compreensoes",
+    "A13": "01_python/13_erros_e_excecoes",
     "B01": "02_pandas/01_series_e_dataframe",
     "B05": "02_pandas/05_filtros",
     "C01": "03_sql/01_select",

@@ -23,6 +23,7 @@ from autoria import (
     a10_tuplas,
     a11_funcoes,
     a12_compreensoes,
+    a13_erros_e_excecoes,
     vitrine,
 )
 from autoria.modelo import Modulo, materializar_modulo
@@ -37,6 +38,7 @@ MODULOS: list[Modulo] = [
     *a10_tuplas.MODULOS,
     *a11_funcoes.MODULOS,
     *a12_compreensoes.MODULOS,
+    *a13_erros_e_excecoes.MODULOS,
     *vitrine.MODULOS,
 ]
 

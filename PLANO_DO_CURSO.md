@@ -4,7 +4,7 @@ Este arquivo é o mapa completo do currículo. O que está marcado ✅ já está
 com enunciado, testes, três dicas e gabarito. O resto é o roteiro para as próximas sessões
 de produção — a ideia é que ninguém precise re-decidir escopo, ordem ou nomenclatura.
 
-**Estado atual: 151 exercícios prontos** (145 do Bloco A + 6 vitrines), de ~560 planejados.
+**Estado atual: 161 exercícios prontos** (155 do Bloco A + 6 vitrines), de ~560 planejados.
 
 ---
 
@@ -44,7 +44,7 @@ linha. O objetivo é que o conhecimento transfira para o mercado.
 
 ---
 
-## Bloco A — Python, do zero ✅ 145 exercícios
+## Bloco A — Python, do zero ✅ 155 exercícios
 
 | módulo | exercícios | conteúdo |
 |---|---|---|
@@ -60,14 +60,14 @@ linha. O objetivo é que o conhecimento transfira para o mercado.
 | A10 Tuplas e desempacotamento | 8 ✅ | imutabilidade, `a, b = b, a`, `*resto`, tupla como chave de dict |
 | A11 Funções | 16 ✅ | parâmetros padrão, `*args`/`**kwargs`, escopo, funções como valor |
 | A12 Compreensões | 12 ✅ | list/dict/set comp, filtro, aninhada, quando **não** usar |
+| A13 Erros e exceções | 10 ✅ | `try`/`except`/`else`/`finally`, `raise`, exceções comuns, EAFP × LBYL |
 
-### Bloco A — o que ainda falta (~29 exercícios)
+### Bloco A — o que ainda falta (~42 exercícios)
 
 Estes módulos completam o Bloco A antes de o Bloco B fazer pleno sentido:
 
 | módulo | exercícios | conteúdo |
 |---|---|---|
-| A13 Erros e exceções | 10 | `try`/`except`/`else`/`finally`, `raise`, exceções comuns, EAFP × LBYL |
 | A14 Arquivos e formatos | 10 | `with open`, `csv`, `json`, `pathlib` |
 | A15 Biblioteca padrão | 14 | `datetime`, `Counter`, `defaultdict`, `itertools`, `re`, `random` |
 | A16 Organização de código | 8 | módulos, imports, type hints, docstrings, primeiro `pytest` |
@@ -158,7 +158,7 @@ resolve um arquivo só por slug — o ponto exato a estender.
 
 ## Ordem sugerida de produção
 
-1. **A13–A17** (~29 ex.) — fecha o Bloco A; é o pré-requisito honesto para o Pandas.
+1. **A14–A17** (~42 ex.) — fecha o Bloco A; é o pré-requisito honesto para o Pandas.
 2. **B02–B10** (~90 ex.) — o Pandas do dia a dia.
 3. **C02–C09** (~100 ex.) — o SQL até subqueries; a partir daqui já dá para trabalhar.
 4. **B11–B15** e **C10–C12** — groupby, reshape, merge, CTEs e window functions,

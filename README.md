@@ -140,12 +140,12 @@ o banco transacional.
 
 | bloco | módulos | exercícios |
 |---|---|---|
-| **A — Python** | 12 de 17 | 145 ✅ |
+| **A — Python** | 13 de 17 | 155 ✅ |
 | **B — Pandas** | 17 | 3 de ~170 |
 | **C — SQL (DuckDB)** | 15 | 3 de ~170 |
 | **D — Ponte Pandas ↔ SQL** | 2 | ~40 |
 
-Os módulos A1–A12 estão completos — inclui um módulo de complexidade e Big-O (A9), com exercícios clássicos de entrevista (two-sum, deduplicação O(n), prefix sums, `deque` × `list.pop(0)`) e testes que cronometram a solução, não só conferem o resultado.
+Os módulos A1–A13 estão completos — inclui um módulo de complexidade e Big-O (A9), com exercícios clássicos de entrevista (two-sum, deduplicação O(n), prefix sums, `deque` × `list.pop(0)`) e testes que cronometram a solução, não só conferem o resultado.
 Os blocos B, C e D têm exercícios-vitrine para você conferir o formato; o índice completo do que falta produzir está em [`PLANO_DO_CURSO.md`](PLANO_DO_CURSO.md).
 
 Cada módulo segue a mesma curva: **aquecimento** (quase guiados) → **prática** →
@@ -194,7 +194,7 @@ npm --prefix app run e2e  # o navegador de verdade contra o servidor de verdade
 O `pytest --solucoes` é o portão que impede um enunciado impossível ou ambíguo de entrar no
 repositório. Nenhum exercício é adicionado sem esse verde.
 
-O verso disso também é verificado: com os esqueletos em branco, **os 151 exercícios reprovam**.
+O verso disso também é verificado: com os esqueletos em branco, **os 161 exercícios reprovam**.
 Um teste que passa sem código escrito não testa nada.
 
 O `e2e` sobe o Chromium contra o `curso web` real — sem mock: ele resolve exercícios,
