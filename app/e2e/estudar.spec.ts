@@ -90,7 +90,7 @@ test("a teoria do módulo abre ao lado do enunciado", async ({ page }) => {
 
 test("o catálogo filtra por bloco e por busca", async ({ page }) => {
   await page.goto("/catalogo");
-  await expect(page.locator(".linha")).toHaveCount(123);
+  await expect(page.locator(".linha")).toHaveCount(139);
 
   await page.getByRole("button", { name: "SQL", exact: true }).click();
   await expect(page.locator(".linha")).toHaveCount(3);
@@ -144,7 +144,7 @@ test("o painel conta o que foi resolvido e desenha os gráficos", async ({ page 
   await expect(page.locator(".resultado")).toHaveClass(/certo/);
 
   await page.goto("/progresso");
-  await expect(page.locator(".numero-grande").first()).toContainText("/123");
+  await expect(page.locator(".numero-grande").first()).toContainText("/139");
   await expect(page.getByText("Revisões nos próximos 30 dias")).toBeVisible();
   await expect(page.getByText("Dias praticados")).toBeVisible();
   await expect(page.locator(".svg-calendario .dia.praticou")).toHaveCount(1);

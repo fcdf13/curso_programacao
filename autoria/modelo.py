@@ -22,6 +22,7 @@ MODULOS: dict[str, str] = {
     "A08": "01_python/08_dicionarios_e_conjuntos",
     "A09": "01_python/09_complexidade_e_big_o",
     "A10": "01_python/10_tuplas_e_desempacotamento",
+    "A11": "01_python/11_funcoes",
     "B01": "02_pandas/01_series_e_dataframe",
     "B05": "02_pandas/05_filtros",
     "C01": "03_sql/01_select",
@@ -116,7 +117,7 @@ def _bloco_meta(ex: Exercicio) -> str:
 
 def _texto_python(s: str) -> str:
     """repr com aspas duplas quando possível — combina com o resto do código."""
-    if '"' not in s and "\\" not in s:
+    if '"' not in s and "\\" not in s and "\n" not in s:
         return f'"{s}"'
     return repr(s)
 

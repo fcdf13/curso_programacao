@@ -21,6 +21,7 @@ from autoria import (
     a08_dicionarios_conjuntos,
     a09_complexidade,
     a10_tuplas,
+    a11_funcoes,
     vitrine,
 )
 from autoria.modelo import Modulo, materializar_modulo
@@ -33,6 +34,7 @@ MODULOS: list[Modulo] = [
     *a08_dicionarios_conjuntos.MODULOS,
     *a09_complexidade.MODULOS,
     *a10_tuplas.MODULOS,
+    *a11_funcoes.MODULOS,
     *vitrine.MODULOS,
 ]
 
