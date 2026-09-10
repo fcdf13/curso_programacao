@@ -235,27 +235,115 @@ Complementos do capítulo que vale internalizar:
 - Randomização mais grossa que a análise (usuário randomizado, métrica por página) **funciona**, mas exige delta method ou bootstrap para a variância, e fica exposta a bots com um único ID e 10.000 pageviews. Mitigação: limitar a contribuição individual ou usar a versão por usuário da métrica. Se o RAVelocity calcula CTR por página sob randomização por usuário com fórmula de variância ingênua, **os p-values estão errados** — e isso é um achado de trustworthiness com prioridade acima da meta de lead-time.
 - IP como unidade: só quando não houver alternativa (mudanças de infraestrutura). Granularidade instável e baixo poder.
 
-### 5.4 Ramp padronizado SQR como *template* do produto (ataca S4, S5, C1, C3)
+### 5.4 As quatro fases do ramp: o framework SQR como caminho padrão do produto (ataca S4, S5, S6, C1, C3, C6)
 
-O cap. 15 entrega o framework pronto; o trabalho de produto é transformá-lo em **caminho padrão com poucos cliques**, em vez de decisão livre a cada experimento. As quatro fases:
+Este é o capítulo mais denso e o mais diretamente conversível em produto. Vale detalhá-lo fase a fase, porque cada uma tem um objetivo *diferente*, e a maior parte do desperdício de lead-time que vejo descrito no seu contexto vem de **tratar as quatro fases como se fossem a mesma coisa** — um único "experimento rodando" que dura o que durar.
 
-| Fase | Objetivo primário | Trade-off | Duração de referência |
-|------|-------------------|-----------|------------------------|
-| 1. Pré-MPR | Mitigar risco | velocidade × risco | horas a poucos dias |
-| 2. MPR (ex.: 50/50) | Medir com precisão | velocidade × qualidade | **~1 semana** |
-| 3. Pós-MPR | Operacional (carga) | — | ≤ 1 dia, opcional |
-| 4. Holdout longo | Aprender efeito de longo prazo | — | opcional, **não default** |
+O ponto de partida é a pergunta que abre o capítulo: por que rodamos experimentos controlados? O livro dá três respostas, e elas não são simultâneas:
 
-Da fase 1, três mecanismos concretos:
-- **Anéis de exposição**: whitelist do time → funcionários → beta users/insiders → data center isolado (Bing usa 0,5–2% em um único DC para pegar vazamento de memória e uso indevido de recurso). O livro avisa que medições dos primeiros anéis são enviesadas ("those users are likely the insiders") — servem para bug, não para decisão.
-- **Dial automático de tráfego** até a alocação-alvo. É a diferença entre "o squad lembra de subir o tráfego na segunda-feira" e "o sistema sobe sozinho às 3h". Elimina uma fatia inteira de S5, que é puro tempo de espera humana.
-- **Guard-rails em tempo real ou quase-real**: "the sooner you can get a read on whether an experiment is risky, the faster you can decide to go to the next ramp phase". Velocidade e segurança aqui não são opostos — a medição rápida é o que *autoriza* ir rápido.
+1. **Medir** o impacto e o ROI do tratamento se ele fosse a 100%.
+2. **Reduzir risco**, minimizando dano e custo para usuários e negócio durante o experimento.
+3. **Aprender** sobre a reação dos usuários, idealmente por segmento, identificar bugs e informar planos futuros.
 
-Da fase 4, um alerta importante para quem está com pressa: **holdout longo não deve ser passo padrão.** O livro é firme, inclusive eticamente: "it could be unethical when we know there is a superior experience but deliberately delay the delivery". Use só nos três casos listados (suspeita de novidade/primazia, efeito de curto prazo grande demais para ser assumido sustentável, ou indicador antecedente com true-north de longo prazo). E, quando o efeito de curto prazo já é pequeno, mantenha o holdout em MPR em vez de 90/10 — "the statistical sensitivity gained by running longer is usually not enough to offset the sensitivity loss by going from MPR to 90%".
+Se o único objetivo fosse medir, rodaríamos tudo direto no MPR — é o ponto de máxima sensibilidade e, portanto, o caminho mais rápido para a resposta. Não fazemos isso por causa do objetivo 2. **O ramp existe inteiramente por causa do risco**, e é por isso que "quanto tempo o ramp deve durar" é uma pergunta de risco, não de estatística. O exemplo canônico do livro é o lançamento do Healthcare.gov, que foi a 100% dos usuários no dia um e caiu — "this could have been mitigated if they had rolled out the site by geographic areas or last names A–Z".
 
-**O holdout global merece consideração à parte, e é um bom argumento para o diretor.** O livro descreve empresas que mantêm uma fatia de tráfego fora de *qualquer* lançamento por um trimestre, para medir o impacto cumulativo (o Bing usa 10%). Numa cultura que vai passar a rodar muitos experimentos pequenos e incrementais, **essa é a única forma de responder à pergunta "a soma dos ganhos declarados corresponde ao ganho real?"** — pergunta que um diretor faz cedo ou tarde, e que é constrangedora sem instrumento. Custo baixo, valor institucional alto.
+E o custo dos dois erros é assimétrico e explícito: **"Ramping too slowly wastes time and resources. Ramping too quickly may hurt users and risks making suboptimal decisions."** É exatamente o nosso trade-off, nomeado no livro como **SQR — Speed, Quality, Risk**.
 
-E, para experimentos de resultado surpreendente, o livro recomenda **replicação** com outra amostra ou re-randomização ortogonal, lembrando que "when there have been many iterations of an experiment, the results from the final iteration may be biased upwards" — relevante justamente numa cultura de iteração incremental rápida.
+| Fase | Objetivo primário | Trade-off dominante | Duração de referência | Serve para decidir? |
+|------|-------------------|---------------------|------------------------|---------------------|
+| 1. Pré-MPR | Mitigar risco | velocidade × **risco** | horas a poucos dias | **Não** |
+| 2. MPR | Medir com precisão | velocidade × **qualidade** | **~1 semana** | **Sim** |
+| 3. Pós-MPR | Operacional (carga) | — | ≤ 1 dia, opcional | Não |
+| 4. Holdout longo | Aprender efeito duradouro | — | semanas a meses, **opcional** | Não (é pós-decisão) |
+
+#### Fase 1 — Pré-MPR: chegar rápido ao ponto onde se mede
+
+O objetivo é declarado sem ambiguidade: "you want to safely determine that the risk is small and **ramp quickly to the MPR**". A fase 1 não é uma fase de medição — é uma fase de eliminação de risco cujo sucesso se mede em *quão rápido ela acaba*.
+
+**Anéis de exposição.** A técnica central é expor o tratamento a populações sucessivas, cada uma com um propósito distinto:
+
+| Anel | População | Para que serve |
+|------|-----------|----------------|
+| a | Indivíduos em whitelist (o próprio time) | feedback verbatim, bugs grosseiros |
+| b | Funcionários da empresa | "typically more forgiving if there are bad bugs" |
+| c | Beta users / insiders | vocais, leais, querem features antes, dispostos a dar feedback |
+| d | Data center isolado | interações difíceis de detectar: vazamento de memória — *"death by slow leak"* — e uso indevido de recurso, como I/O de disco pesado |
+
+No Bing, o padrão é subir 0,5–2% em um único data center; quando esse DC está em tráfego decente, todos os DCs sobem.
+
+**O alerta mais importante da fase 1, e o que mais custa lead-time no seu contexto:** os primeiros anéis **não produzem medida utilizável**. O livro é explícito — "the first rings are usually to get qualitative feedback, as there simply isn't enough traffic to get a meaningful read on data. The next rings may have quantitative measurement but still be uncontrolled as the statistical power is low", e "measurements from the early rings can be biased as those users are likely the *insiders*".
+
+Isso tem uma consequência de produto que eu recomendaria implementar **[extrapolação, mas diretamente ancorada]**: enquanto o experimento está em pré-MPR, o RAVelocity deveria mostrar **saúde e guard-rails, não estimativa de efeito**. Um squad que abre o scorecard no dia 2, a 2% de tráfego, vê ruído; se o ruído for verde, ele decide cedo e errado; se for vermelho, ele mata uma boa ideia; e no caso mais comum, ele fica olhando por mais alguns dias "para ver se firma". Nos três casos, perde-se tempo e/ou qualidade. **Esconder a estimativa de efeito antes do MPR é, ao mesmo tempo, uma feature de velocidade e de confiabilidade** — e é o mesmo princípio que o cap. 16 aplica ao SRM, quando recomenda esconder o scorecard inteiro se os testes de confiança falham.
+
+**Dial automático de tráfego.** A segunda técnica é subir o tráfego automaticamente até a alocação desejada. O livro dá a intuição do custo-benefício com uma precisão que vale citar em reunião: "even if the desired allocation is only a small percentage (e.g., 5%), **taking an extra hour to reach 5% can help limit the impact of bad bugs without adding much delay**". Uma hora de rampa automática compra contenção de risco quase de graça — enquanto a alternativa real na maioria das plataformas imaturas é *um dia*, porque alguém precisa lembrar de clicar num botão na manhã seguinte.
+
+Esse é o item de maior retorno imediato de toda a fase 1: **cada passo de ramp que depende de um humano lembrar custa entre meio dia e dois dias de calendário, e não compra nenhuma segurança adicional em relação ao dial automático.**
+
+**Guard-rails em tempo quase-real.** A terceira técnica fecha o raciocínio e desfaz a falsa oposição entre velocidade e segurança: "producing real-time or near-real-time measurements on key guardrail metrics. **The sooner you can get a read on whether an experiment is risky, the faster you can decide to go to the next ramp phase.**" Medição rápida de risco não é um freio — é o que *autoriza* acelerar. Sem ela, a única forma de se sentir seguro é esperar, e esperar é exatamente o que estoura a meta.
+
+#### Fase 2 — MPR: a única fase que produz decisão
+
+**MPR (Maximum Power Ramp) não significa "50%".** Significa a divisão balanceada do tráfego *disponível*, e a distinção importa na prática. A nota de rodapé do capítulo dá os três casos:
+
+- 100% de tráfego, um tratamento → **50/50**.
+- Apenas 20% de tráfego disponível para o experimento → **10/10**.
+- Quatro variantes dividindo 100% → **25% cada**.
+
+O terceiro caso merece destaque no produto, porque é uma armadilha silenciosa e frequente: **cada braço adicional derruba o poder de cada comparação.** Um squad que, na ânsia de "aprender mais rápido", roda A/B/C/D em vez de A/B, reduz sua alocação por braço pela metade e alonga o experimento — enquanto acredita estar acelerando. Combinado com o efeito de escopo pequeno da §2, é uma receita direta para o teste que nunca conclui. A plataforma deveria exibir, no momento em que a variante é adicionada, **o custo em dias** daquele braço a mais.
+
+**Duração: uma semana.** "We want to highlight our recommendation to keep experiments at MPR for a week, and longer if novelty or primacy effects are present." As razões são três, e todas são razões de *viés*, não de precisão:
+
+- Capturar fatores dependentes do tempo — "users who visit during weekdays tend to be different from users visiting on weekends".
+- Evitar o viés de usuários pesados — "an experiment that runs for only one day will have results biased towards heavy users".
+- Novidade e primazia, quando presentes, exigem mais.
+
+E o outro lado: "while we usually get smaller variance with a longer experiment, there is a **diminishing return** as we wait longer. In our experience, the precision gained after a week tends to be small if there are no novelty or primacy trends."
+
+Ou seja, a semana é um **piso justificado por viés** e um **teto justificado por retorno decrescente**. É uma das poucas recomendações do livro que dá simultaneamente uma trava contra a pressa e uma trava contra a procrastinação — e as duas servem à meta.
+
+**A inversão que vale levar para a apresentação:** dado que a fase 2 é a única que produz decisão e tem duração praticamente fixa, o caminho para reduzir lead-time **não é sair do MPR mais cedo — é chegar ao MPR mais cedo.** Todo dia gasto a 2% é um dia de informação quase nula. A pergunta de gestão correta deixa de ser "quanto tempo o experimento está rodando?" e passa a ser **"há quantos dias ele está na fase de medição?"** — e essa é uma métrica que a plataforma pode exibir e que muda comportamento sozinha.
+
+#### Fase 3 — Pós-MPR: entrega, não aprendizado
+
+"By the time an experiment is past the MPR phase, there should be no concerns regarding end-user impact." As rampas remanescentes existem por razões de infraestrutura — validar que serviços e endpoints aguentam a carga crescente — e "should only take a day or less, usually covering peak traffic periods with close monitoring".
+
+**A implicação para a métrica é direta e provavelmente vale dias no seu numerador [extrapolação]:** a decisão acontece no fim da fase 2. A subida para 100% é *entrega*, não aprendizado. Se hoje o RAVelocity só considera um experimento "concluído" quando ele chega a 100%, o lead-time está medindo entrega junto com aprendizado, e o squad está sendo cobrado por uma espera que não produz conhecimento nenhum. **Separar "decisão registrada" de "ramp finalizado", com o relógio parando na primeira**, é uma mudança de modelo de dados pequena, honesta e de efeito imediato sobre a métrica — e, mais importante, faz o squad registrar a decisão no momento em que ela realmente é tomada, em vez de deixá-la implícita.
+
+**Cleanup pós-ramp final.** O capítulo fecha com o passivo que ninguém prioriza: se a arquitetura cria um fork de código por variante, o caminho morto precisa ser removido; se usa sistema de parâmetros, basta promover o novo valor a default. O alerta é sério — "it can be disastrous when a dead code path that is not being maintained for a while is accidentally executed, which could happen when the experiment system has an outage". Um relatório de "experimentos em 100% sem cleanup" é trivial de gerar e é dívida técnica com risco de produção.
+
+#### Fase 4 — Holdout longo e replicação: fora do relógio, dentro da credibilidade
+
+O livro pede cautela explícita: **"we want to caution not to make a long-term holdout a default step in the ramping process."** O custo não é só de tempo — "it could be unethical when we know there is a superior experience but deliberately delay the delivery of such experience, especially when customers are paying equally".
+
+Os três casos em que ele *é* justificado:
+
+1. Quando o efeito de longo prazo pode diferir do de curto prazo: área com novidade ou primazia conhecidas; impacto de curto prazo tão grande que precisa ser confirmado sustentável (por exemplo, para projeção financeira); ou impacto de curto prazo pequeno mas com efeito retardado esperado, por adoção ou descoberta.
+2. Quando um indicador antecedente se move mas a métrica true-north é de longo prazo — retenção de um mês, por exemplo.
+3. Quando há ganho de redução de variância em segurar mais tempo.
+
+E um erro de desenho comum: holdout com 90% ou 95% em tratamento. Para o caso 1c — impacto de curto prazo pequeno demais para ser detectado no MPR — o correto é **manter o holdout em MPR**, porque "the statistical sensitivity gained by running longer is usually not enough to offset the sensitivity loss by going from MPR to 90%".
+
+**O holdout global de portfólio merece uma decisão consciente e é o melhor argumento de credibilidade que o programa pode ter.** O livro descreve empresas que mantêm uma fatia de tráfego fora de *qualquer* lançamento por um período longo — o Bing usa 10%, inclusive para medir o overhead da própria plataforma de experimentação. Numa cultura que passará a rodar muitos experimentos pequenos e incrementais, essa é a única forma de responder à pergunta que um diretor faz cedo ou tarde: **"a soma dos ganhos que vocês declararam corresponde ao ganho que a empresa realmente teve?"** O custo é honesto e deve ser declarado: com 10% retidos, os experimentos passam a dividir 90% do tráfego, e o MPR vira 45/45 — uma perda pequena de sensibilidade em troca de uma resposta que nenhum experimento individual consegue dar.
+
+Ainda na fase 4, dois mecanismos de higiene: **experimentos reversos** (usuários devolvidos ao controle semanas ou meses após o lançamento) e **replicação** de resultados surpreendentes, com outra amostra ou re-randomização ortogonal. A justificativa da replicação é especialmente relevante numa cultura de iteração rápida: "when there have been many iterations of an experiment, the results from the final iteration may be **biased upwards**. A replication run reduces the multiple-testing concern and provides an unbiased estimate." Quanto mais o time itera — que é exatamente o que queremos incentivar — mais o resultado final tende a ser otimista, e mais a replicação vale a pena nos casos de maior aposta.
+
+#### O que a plataforma precisa implementar, por fase
+
+| Fase | Feature de plataforma | Efeito no lead-time |
+|------|------------------------|---------------------|
+| 1 | Templates de ramp por tipo de experimento (não configuração livre) | remove decisão e discussão de S4/S5 |
+| 1 | Dial automático até a alocação-alvo | −0,5 a −2 dias por experimento |
+| 1 | Anéis pré-configurados (whitelist / funcionários / beta / DC) | risco contido sem espera humana |
+| 1 | Guard-rails NRT com desligamento automático | autoriza rampa mais rápida |
+| 1 | **Ocultar estimativa de efeito antes do MPR** | evita decisão precoce e vigília improdutiva |
+| 2 | Alocação MPR como default, calculada sobre o tráfego disponível | −dias por ganho de sensibilidade |
+| 2 | Custo em dias exibido ao adicionar cada variante | evita o teste de 4 braços subdimensionado |
+| 2 | Contador visível de "dias em fase de medição" | muda a pergunta de gestão |
+| 2 | Trava de encerramento antes de 7 dias em MPR, com justificativa | protege contra a meta ser batida errado |
+| 3 | Decisão registrável no fim do MPR, desacoplada do ramp a 100% | **retira a entrega do numerador** |
+| 3 | Relatório de experimentos em 100% sem cleanup | dívida técnica e risco operacional |
+| 4 | Holdout global de portfólio e experimentos reversos | credibilidade do ganho agregado |
+| 4 | Fluxo de replicação em um clique para resultados surpreendentes | qualidade da decisão em apostas grandes |
 
 ### 5.5 Client-side: parametrizar para descolar do ciclo de release (ataca S3, S4, C5)
 

@@ -1,0 +1,631 @@
+<title>Programa Quinze Dias</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#F5F6F3; --surface:#FFFFFF; --surface-2:#EDEFEA;
+    --ink:#141A17; --muted:#5B6660; --faint:#8A948E;
+    --rule:#DCE0DA; --rule-strong:#C3C9BF;
+    --accent:#0F6B57; --accent-soft:#DCEBE5;
+    --signal:#B4531E; --signal-soft:#F3E2D6;
+    --warn:#9C7414;
+    --serif:"IBM Plex Serif", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0E1311; --surface:#161C1A; --surface-2:#1D2523;
+      --ink:#E8EDE9; --muted:#9AA69F; --faint:#79847E;
+      --rule:#2A3330; --rule-strong:#3B4642;
+      --accent:#4FC0A2; --accent-soft:#14302A;
+      --signal:#E08A54; --signal-soft:#33231A;
+      --warn:#D9AE55;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E1311; --surface:#161C1A; --surface-2:#1D2523;
+    --ink:#E8EDE9; --muted:#9AA69F; --faint:#79847E;
+    --rule:#2A3330; --rule-strong:#3B4642;
+    --accent:#4FC0A2; --accent-soft:#14302A;
+    --signal:#E08A54; --signal-soft:#33231A;
+    --warn:#D9AE55;
+  }
+
+  body{
+    background:var(--ground); color:var(--ink);
+    font-family:var(--sans); font-size:16px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:1080px; margin:0 auto; padding-inline:20px; padding-block:0 72px; }
+  .col{ max-width:660px; }
+
+  h1,h2,h3{ font-family:var(--serif); text-wrap:balance; margin:0; }
+  h1{ font-size:clamp(2.1rem,5.4vw,3.1rem); font-weight:600; line-height:1.08; letter-spacing:-0.015em; }
+  h2{ font-size:clamp(1.4rem,3vw,1.75rem); font-weight:600; line-height:1.2; }
+  h3{ font-size:1.06rem; font-weight:600; line-height:1.3; }
+  p{ margin:0; }
+  strong{ font-weight:600; }
+  em{ font-style:italic; }
+
+  .eyebrow{
+    font-family:var(--mono); font-size:.7rem; font-weight:500;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--accent);
+  }
+  .eyebrow.sig{ color:var(--signal); }
+  .eyebrow.mut{ color:var(--faint); }
+
+  header.hero{
+    padding-block:56px 40px; border-bottom:1px solid var(--rule);
+    display:flex; flex-direction:column; gap:20px;
+  }
+  .hero .lede{ font-size:1.14rem; color:var(--muted); max-width:640px; }
+  .hero .thesis{
+    font-family:var(--serif); font-size:1.22rem; line-height:1.45;
+    border-left:3px solid var(--accent); padding-left:20px; max-width:660px;
+  }
+
+  .commit-strip{ display:flex; flex-wrap:wrap; gap:0; border:1px solid var(--rule); border-radius:2px; background:var(--surface); margin-top:6px; }
+  .commit{ flex:1 1 190px; padding:16px 18px; border-right:1px solid var(--rule); display:flex; flex-direction:column; gap:3px; }
+  .commit:last-child{ border-right:0; }
+  .commit .n{ font-family:var(--mono); font-size:1.5rem; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .commit .k{ font-family:var(--mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .commit .d{ font-size:.85rem; color:var(--muted); line-height:1.4; }
+
+  section{ padding-block:44px; border-bottom:1px solid var(--rule); display:flex; flex-direction:column; gap:18px; }
+  section:last-of-type{ border-bottom:0; }
+  .stack{ display:flex; flex-direction:column; gap:14px; }
+
+  figure{ margin:8px 0 0; display:flex; flex-direction:column; gap:10px; }
+  .figbox{ background:var(--surface); border:1px solid var(--rule); border-radius:2px; padding:22px 20px 18px; overflow-x:auto; }
+  figure svg{ display:block; width:100%; min-width:640px; max-width:100%; height:auto; color:var(--ink); }
+  figcaption{ font-size:.82rem; color:var(--muted); font-family:var(--mono); line-height:1.5; }
+  .svg-label{ font-family:var(--mono); font-size:10px; fill:currentColor; }
+  .svg-label-sm{ font-family:var(--mono); font-size:9px; fill:currentColor; }
+  .svg-title{ font-family:var(--mono); font-size:11px; font-weight:600; fill:currentColor; letter-spacing:.06em; }
+  .svg-num{ font-family:var(--mono); font-size:12px; font-weight:600; fill:currentColor; }
+
+  .grid4{ display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:0; border:1px solid var(--rule); border-radius:2px; background:var(--surface); }
+  .ph{ padding:18px; border-right:1px solid var(--rule); display:flex; flex-direction:column; gap:9px; }
+  .ph:last-child{ border-right:0; }
+  .ph .tag{ font-family:var(--mono); font-size:.68rem; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); }
+  .ph .goal{ font-size:.9rem; color:var(--muted); line-height:1.45; }
+  .ph .trade{ font-family:var(--mono); font-size:.72rem; color:var(--signal); }
+  .ph.is-key{ background:var(--accent-soft); }
+  .ph.is-key .tag{ color:var(--accent); }
+
+  .prog{ display:flex; flex-direction:column; gap:0; border:1px solid var(--rule); border-radius:2px; background:var(--surface); }
+  .prow{ display:grid; grid-template-columns:150px 1fr 250px; gap:0; border-bottom:1px solid var(--rule); }
+  .prow:last-child{ border-bottom:0; }
+  .prow > div{ padding:16px 18px; }
+  .prow .when{ border-right:1px solid var(--rule); display:flex; flex-direction:column; gap:2px; }
+  .prow .when .p{ font-family:var(--mono); font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
+  .prow .when .t{ font-family:var(--mono); font-size:.8rem; color:var(--muted); }
+  .prow .what{ display:flex; flex-direction:column; gap:7px; }
+  .prow .what h3{ font-family:var(--sans); font-size:.95rem; }
+  .prow .what ul{ margin:0; padding-left:17px; display:flex; flex-direction:column; gap:3px; }
+  .prow .what li{ font-size:.88rem; color:var(--muted); line-height:1.45; }
+  .prow .exit{ border-left:1px solid var(--rule); background:var(--surface-2); display:flex; flex-direction:column; gap:5px; }
+  .prow .exit .x{ font-family:var(--mono); font-size:.64rem; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); }
+  .prow .exit p{ font-size:.85rem; line-height:1.45; }
+  .prow.key .when .p{ color:var(--signal); }
+
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .panel{ border:1px solid var(--rule); border-radius:2px; background:var(--surface); padding:18px; display:flex; flex-direction:column; gap:11px; }
+  .panel.commitp{ border-left:3px solid var(--accent); }
+  .panel.betp{ border-left:3px solid var(--signal); }
+  .panel ul{ margin:0; padding-left:17px; display:flex; flex-direction:column; gap:6px; }
+  .panel li{ font-size:.9rem; line-height:1.45; }
+  .panel li span{ color:var(--muted); }
+
+  table{ border-collapse:collapse; width:100%; font-size:.88rem; }
+  th,td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--rule); vertical-align:top; line-height:1.45; }
+  th{ font-family:var(--mono); font-size:.68rem; letter-spacing:.11em; text-transform:uppercase; color:var(--faint); font-weight:500; border-bottom:1px solid var(--rule-strong); }
+  td.dir{ font-family:var(--mono); color:var(--accent); white-space:nowrap; }
+  td.num{ font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--faint); white-space:nowrap; }
+  .tablewrap{ overflow-x:auto; border:1px solid var(--rule); border-radius:2px; background:var(--surface); }
+  .tablewrap table{ min-width:520px; }
+  .tablewrap tr:last-child td{ border-bottom:0; }
+
+  .callout{ background:var(--signal-soft); border-radius:2px; padding:16px 18px; font-size:.95rem; line-height:1.5; }
+  .callout .eyebrow{ display:block; margin-bottom:5px; }
+
+  .ask{ display:flex; flex-direction:column; gap:12px; }
+  .ask-hero{ border:1px solid var(--accent); border-radius:2px; padding:18px; background:var(--accent-soft); }
+
+  footer{ padding-block:32px; font-size:.82rem; color:var(--faint); font-family:var(--mono); line-height:1.6; }
+
+  @media (max-width:720px){
+    .prow{ grid-template-columns:1fr; }
+    .prow .when{ border-right:0; border-bottom:1px solid var(--rule); flex-direction:row; gap:10px; align-items:baseline; }
+    .prow .exit{ border-left:0; border-top:1px solid var(--rule); }
+    .two{ grid-template-columns:1fr; }
+    .ph{ border-right:0; border-bottom:1px solid var(--rule); }
+    .ph:last-child{ border-bottom:0; }
+    .commit{ border-right:0; border-bottom:1px solid var(--rule); }
+    .commit:last-child{ border-bottom:0; }
+  }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">RAVelocity · Programa de plataforma · Q4</span>
+  <h1>Programa Quinze&nbsp;Dias</h1>
+  <p class="lede">Reduzir o lead-time entre hipótese e decisão de 30 para 15 dias — e provar, depois, que a empresa passou mesmo a aprender mais rápido.</p>
+  <p class="thesis">Vamos rampar a plataforma do mesmo jeito que pedimos aos squads que rampem seus experimentos: em quatro fases, cada uma com um objetivo distinto e um critério de saída explícito.</p>
+  <div class="commit-strip">
+    <div class="commit"><span class="k">Semana 4</span><span class="n">30 → ?</span><span class="d">A decomposição real dos 30 dias, publicada, antes de qualquer pedido grande.</span></div>
+    <div class="commit"><span class="k">Semana 13 · compromisso</span><span class="n">p50 ≤ 15d</span><span class="d">Com p75 ≤ 21 dias, sobre janela móvel de 6 semanas.</span></div>
+    <div class="commit"><span class="k">Contínuo · guard-rail</span><span class="n">5 números</span><span class="d">Nenhuma troca de confiabilidade por velocidade. Publicados todo mês.</span></div>
+  </div>
+</header>
+
+<section>
+  <span class="eyebrow">O problema, com números</span>
+  <div class="col stack">
+    <h2>Um bom experimento leva de 9 a 11 dias. O resto é fila.</h2>
+    <p>O livro do Kohavi fixa a janela de medição em <strong>uma semana</strong> — menos que isso enviesa o resultado para usuários pesados e para o dia da semana, e mais que isso rende cada vez menos precisão. Somando a rampa inicial e a leitura do resultado, o núcleo irredutível de um experimento bem desenhado fica entre <strong>9 e 11 dias</strong>.</p>
+    <p>Dentro de uma meta de 15 dias, isso deixa <strong>4 a 6 dias</strong> para tudo o que é humano: formular, instrumentar, implementar, esperar na fila e decidir. A meta é atingível — mas só atacando o que está fora da janela de medição, e sem espaço para um único ciclo de retrabalho.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 880 330" role="img" aria-label="Cascata mostrando de onde saem os 15 dias: retrabalho de instrumentação 4 dias, fila de liberação 3, ramp manual 2, MPR além de 7 dias 4, latência de scorecard 1 e decisão parada 1.">
+        <text class="svg-title" x="0" y="14" fill="currentColor">DE ONDE SAEM OS 15 DIAS</text>
+        <line x1="0" y1="250" x2="860" y2="250" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+
+        <rect x="30" y="50" width="70" height="200" fill="var(--accent)" opacity="0.85"/>
+        <text class="svg-num" x="65" y="42" text-anchor="middle" fill="currentColor">30</text>
+        <text class="svg-label" x="65" y="268" text-anchor="middle" fill="currentColor">Hoje</text>
+        <text class="svg-label-sm" x="65" y="282" text-anchor="middle" fill="currentColor" opacity="0.65">dias</text>
+
+        <line x1="100" y1="50" x2="130" y2="50" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+        <rect x="130" y="50" width="70" height="27" fill="var(--signal)" opacity="0.85"/>
+        <text class="svg-num" x="165" y="42" text-anchor="middle" fill="var(--signal)">−4</text>
+        <text class="svg-label" x="165" y="268" text-anchor="middle" fill="currentColor">Retrabalho</text>
+        <text class="svg-label-sm" x="165" y="282" text-anchor="middle" fill="currentColor" opacity="0.65">instrumentação</text>
+
+        <line x1="200" y1="77" x2="230" y2="77" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+        <rect x="230" y="77" width="70" height="20" fill="var(--signal)" opacity="0.85"/>
+        <text class="svg-num" x="265" y="69" text-anchor="middle" fill="var(--signal)">−3</text>
+        <text class="svg-label" x="265" y="268" text-anchor="middle" fill="currentColor">Fila de</text>
+        <text class="svg-label-sm" x="265" y="282" text-anchor="middle" fill="currentColor" opacity="0.65">liberação</text>
+
+        <line x1="300" y1="97" x2="330" y2="97" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+        <rect x="330" y="97" width="70" height="13" fill="var(--signal)" opacity="0.85"/>
+        <text class="svg-num" x="365" y="89" text-anchor="middle" fill="var(--signal)">−2</text>
+        <text class="svg-label" x="365" y="268" text-anchor="middle" fill="currentColor">Ramp</text>
+        <text class="svg-label-sm" x="365" y="282" text-anchor="middle" fill="currentColor" opacity="0.65">manual</text>
+
+        <line x1="400" y1="110" x2="430" y2="110" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+        <rect x="430" y="110" width="70" height="27" fill="var(--signal)" opacity="0.85"/>
+        <text class="svg-num" x="465" y="102" text-anchor="middle" fill="var(--signal)">−4</text>
+        <text class="svg-label" x="465" y="268" text-anchor="middle" fill="currentColor">MPR além</text>
+        <text class="svg-label-sm" x="465" y="282" text-anchor="middle" fill="currentColor" opacity="0.65">de 7 dias</text>
+
+        <line x1="500" y1="137" x2="530" y2="137" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+        <rect x="530" y="137" width="70" height="7" fill="var(--signal)" opacity="0.85"/>
+        <text class="svg-num" x="565" y="129" text-anchor="middle" fill="var(--signal)">−1</text>
+        <text class="svg-label" x="565" y="268" text-anchor="middle" fill="currentColor">Latência</text>
+        <text class="svg-label-sm" x="565" y="282" text-anchor="middle" fill="currentColor" opacity="0.65">do scorecard</text>
+
+        <line x1="600" y1="144" x2="630" y2="144" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+        <rect x="630" y="144" width="70" height="6" fill="var(--signal)" opacity="0.85"/>
+        <text class="svg-num" x="665" y="136" text-anchor="middle" fill="var(--signal)">−1</text>
+        <text class="svg-label" x="665" y="268" text-anchor="middle" fill="currentColor">Decisão</text>
+        <text class="svg-label-sm" x="665" y="282" text-anchor="middle" fill="currentColor" opacity="0.65">parada</text>
+
+        <line x1="700" y1="150" x2="730" y2="150" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+        <rect x="730" y="150" width="70" height="100" fill="var(--accent)"/>
+        <text class="svg-num" x="765" y="142" text-anchor="middle" fill="var(--accent)">15</text>
+        <text class="svg-label" x="765" y="268" text-anchor="middle" fill="currentColor">Meta</text>
+        <text class="svg-label-sm" x="765" y="282" text-anchor="middle" fill="currentColor" opacity="0.65">dias</text>
+
+        <line x1="730" y1="250" x2="800" y2="250" stroke="currentColor" stroke-width="0" />
+        <line x1="806" y1="150" x2="806" y2="250" stroke="var(--accent)" stroke-width="2"/>
+        <text class="svg-label-sm" x="814" y="192" fill="currentColor" opacity="0.7">núcleo</text>
+        <text class="svg-label-sm" x="814" y="204" fill="currentColor" opacity="0.7">irredutível</text>
+        <text class="svg-label-sm" x="814" y="216" fill="var(--accent)">9–11 d</text>
+
+        <text class="svg-label-sm" x="0" y="310" fill="currentColor" opacity="0.6">Ilustrativo — a distribuição real é entregue na Semana 4.</text>
+      </svg>
+    </div>
+    <figcaption>Os dias não saem da janela de medição: saem de retrabalho, fila e espera. Números ilustrativos até o painel de portfólio existir.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <span class="eyebrow sig">A armadilha</span>
+  <div class="col stack">
+    <h2>Escopo menor, sozinho, deixa o experimento mais lento</h2>
+    <p>Escopo menor produz efeito menor. E o tamanho de amostra necessário cresce com o <em>quadrado</em> do inverso do efeito: detectar 0,5% custa quatro vezes mais amostra do que detectar 1%. Um squad que fatia uma tese grande em quatro incrementos pode transformar um teste de 10 dias em quatro testes de 30.</p>
+    <p>É exatamente esse o mecanismo por trás dos experimentos que ficam rodando sem concluir. O squad não está sendo lento — ele está sendo lento <em>por causa</em> da decisão de reduzir escopo, tomada sem a compensação correspondente.</p>
+  </div>
+  <div class="callout col">
+    <span class="eyebrow sig">O papel da plataforma</span>
+    Se a empresa vai reduzir escopo, a plataforma precisa devolver sensibilidade por outras cinco vias: <strong>alocação em MPR</strong>, <strong>análise triggered</strong>, <strong>unidade de randomização adequada</strong>, <strong>métricas de menor variância</strong> e <strong>redução de variância</strong>. Sem elas, a tese de negócio funciona contra a meta.
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">O framework</span>
+  <div class="col stack">
+    <h2>As quatro fases do ramp</h2>
+    <p>Um experimento não é uma coisa só. Ele passa por quatro fases com objetivos diferentes, e quase todo desperdício de tempo vem de tratá-las como se fossem a mesma — um único “experimento rodando” que dura o que durar.</p>
+  </div>
+
+  <div class="grid4">
+    <div class="ph">
+      <span class="tag">1 · Pré-MPR</span>
+      <h3>Mitigar risco</h3>
+      <p class="goal">Anéis de exposição e dial automático até a alocação-alvo. <strong>Não produz decisão</strong>: o tráfego é pequeno demais e a população é enviesada.</p>
+      <span class="trade">velocidade × risco · horas a poucos dias</span>
+    </div>
+    <div class="ph is-key">
+      <span class="tag">2 · MPR</span>
+      <h3>Medir</h3>
+      <p class="goal">Divisão balanceada do tráfego disponível — máxima sensibilidade. <strong>A única fase que produz decisão.</strong></p>
+      <span class="trade">velocidade × qualidade · ~7 dias</span>
+    </div>
+    <div class="ph">
+      <span class="tag">3 · Pós-MPR</span>
+      <h3>Escalar</h3>
+      <p class="goal">Subida a 100% por razões de carga, mais o cleanup do código morto. É entrega, não aprendizado.</p>
+      <span class="trade">operacional · ≤ 1 dia</span>
+    </div>
+    <div class="ph">
+      <span class="tag">4 · Holdout</span>
+      <h3>Aprender</h3>
+      <p class="goal">Efeito de longo prazo e replicação. Nunca deve ser passo padrão — custa tempo e, às vezes, é eticamente questionável.</p>
+      <span class="trade">opcional · semanas a meses</span>
+    </div>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 880 400" role="img" aria-label="Curva de exposição em quatro fases: rampa pequena até 2 e 25 por cento, patamar de 50 por cento durante a semana de medição, subida a 100 por cento e cauda de holdout em 90 por cento; abaixo, as quatro fases equivalentes do programa alinhadas às mesmas fronteiras.">
+        <text class="svg-title" x="0" y="14" fill="currentColor">EXPERIMENTO</text>
+
+        <rect x="210" y="52" width="260" height="198" fill="var(--accent)" opacity="0.10"/>
+
+        <line x1="60" y1="250" x2="850" y2="250" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+        <line x1="60" y1="155" x2="850" y2="155" stroke="currentColor" stroke-width="1" stroke-dasharray="2 4" opacity="0.25"/>
+        <line x1="60" y1="60" x2="850" y2="60" stroke="currentColor" stroke-width="1" stroke-dasharray="2 4" opacity="0.25"/>
+        <text class="svg-label-sm" x="52" y="253" text-anchor="end" fill="currentColor" opacity="0.65">0%</text>
+        <text class="svg-label-sm" x="52" y="158" text-anchor="end" fill="currentColor" opacity="0.65">50%</text>
+        <text class="svg-label-sm" x="52" y="63" text-anchor="end" fill="currentColor" opacity="0.65">100%</text>
+
+        <line x1="210" y1="52" x2="210" y2="258" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.45"/>
+        <line x1="470" y1="52" x2="470" y2="258" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.45"/>
+        <line x1="590" y1="52" x2="590" y2="258" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.45"/>
+
+        <polyline points="90,246 140,246 140,231 175,231 175,203 210,203 210,155 470,155 470,108 530,108 530,60 590,60 590,79 830,79"
+                  fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+
+        <text class="svg-label" x="135" y="42" text-anchor="middle" fill="currentColor">1 · PRÉ-MPR</text>
+        <text class="svg-label" x="340" y="42" text-anchor="middle" fill="var(--accent)">2 · MPR</text>
+        <text class="svg-label" x="530" y="42" text-anchor="middle" fill="currentColor">3 · PÓS-MPR</text>
+        <text class="svg-label" x="710" y="42" text-anchor="middle" fill="currentColor">4 · HOLDOUT</text>
+
+        <text class="svg-label-sm" x="135" y="272" text-anchor="middle" fill="currentColor">mitigar risco</text>
+        <text class="svg-label-sm" x="135" y="285" text-anchor="middle" fill="var(--signal)">velocidade × risco</text>
+        <text class="svg-label-sm" x="340" y="272" text-anchor="middle" fill="currentColor">medir · ~7 dias</text>
+        <text class="svg-label-sm" x="340" y="285" text-anchor="middle" fill="var(--signal)">velocidade × qualidade</text>
+        <text class="svg-label-sm" x="530" y="272" text-anchor="middle" fill="currentColor">carga + cleanup</text>
+        <text class="svg-label-sm" x="710" y="272" text-anchor="middle" fill="currentColor">aprender · opcional</text>
+
+        <text class="svg-label-sm" x="340" y="180" text-anchor="middle" fill="var(--accent)">única fase que produz decisão</text>
+
+        <text class="svg-title" x="0" y="325" fill="currentColor">PROGRAMA</text>
+        <rect x="90" y="336" width="120" height="40" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+        <rect x="210" y="336" width="260" height="40" fill="var(--accent)" opacity="0.14"/>
+        <rect x="210" y="336" width="260" height="40" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+        <rect x="470" y="336" width="120" height="40" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+        <rect x="590" y="336" width="240" height="40" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+
+        <text class="svg-label" x="150" y="353" text-anchor="middle" fill="currentColor">ANÉIS</text>
+        <text class="svg-label-sm" x="150" y="367" text-anchor="middle" fill="currentColor" opacity="0.7">Semanas 1–4</text>
+        <text class="svg-label" x="340" y="353" text-anchor="middle" fill="var(--accent)">MPR</text>
+        <text class="svg-label-sm" x="340" y="367" text-anchor="middle" fill="var(--accent)">Semanas 5–13 · a meta</text>
+        <text class="svg-label" x="530" y="353" text-anchor="middle" fill="currentColor">ESCALA</text>
+        <text class="svg-label-sm" x="530" y="367" text-anchor="middle" fill="currentColor" opacity="0.7">Q+1</text>
+        <text class="svg-label" x="710" y="353" text-anchor="middle" fill="currentColor">HOLDOUT</text>
+        <text class="svg-label-sm" x="710" y="367" text-anchor="middle" fill="currentColor" opacity="0.7">Q+2 em diante</text>
+      </svg>
+    </div>
+    <figcaption>A mesma forma, duas leituras. As fronteiras das quatro fases do programa são as mesmas do ramp de um experimento — e cada uma só avança cumprindo seu critério de saída.</figcaption>
+  </figure>
+
+  <div class="col stack">
+    <h3>A inversão que muda a gestão</h3>
+    <p>Como a fase 2 é a única que produz decisão e tem duração praticamente fixa, o caminho para reduzir lead-time <strong>não é sair do MPR mais cedo — é chegar ao MPR mais cedo.</strong> Todo dia a 2% de tráfego é um dia de informação quase nula.</p>
+    <p>A pergunta de gestão deixa de ser <em>“há quanto tempo esse experimento está rodando?”</em> e passa a ser <strong><em>“há quantos dias ele está na fase de medição?”</em></strong> — uma métrica que a plataforma pode exibir e que muda comportamento sozinha.</p>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">O fluxo</span>
+  <div class="col stack">
+    <h2>Onde ficam os gates e onde o relógio para</h2>
+    <p>Duas travas de validade, um aviso de viabilidade, e uma mudança de modelo de dados que retira a entrega do numerador da métrica.</p>
+  </div>
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 960 250" role="img" aria-label="Os oito estágios do experimento em sequência, com dois gates que travam, um que avisa, e a marcação de que o relógio para na decisão e não na subida a cem por cento.">
+        <text class="svg-label-sm" x="40" y="26" fill="var(--signal)">COMPRIMÍVEL · alvo 4–6 dias</text>
+        <line x1="40" y1="34" x2="470" y2="34" stroke="var(--signal)" stroke-width="1.5"/>
+        <line x1="40" y1="34" x2="40" y2="42" stroke="var(--signal)" stroke-width="1.5"/>
+        <line x1="470" y1="34" x2="470" y2="42" stroke="var(--signal)" stroke-width="1.5"/>
+
+        <text class="svg-label-sm" x="484" y="26" fill="var(--accent)">IRREDUTÍVEL · 8–10 dias</text>
+        <line x1="484" y1="34" x2="700" y2="34" stroke="var(--accent)" stroke-width="1.5"/>
+        <line x1="484" y1="34" x2="484" y2="42" stroke="var(--accent)" stroke-width="1.5"/>
+        <line x1="700" y1="34" x2="700" y2="42" stroke="var(--accent)" stroke-width="1.5"/>
+
+        <text class="svg-label-sm" x="714" y="26" fill="var(--signal)">COMPRIMÍVEL</text>
+        <line x1="714" y1="34" x2="930" y2="34" stroke="var(--signal)" stroke-width="1.5"/>
+        <line x1="714" y1="34" x2="714" y2="42" stroke="var(--signal)" stroke-width="1.5"/>
+        <line x1="930" y1="34" x2="930" y2="42" stroke="var(--signal)" stroke-width="1.5"/>
+
+        <g>
+          <rect x="40" y="90" width="105" height="52" fill="none" stroke="currentColor" stroke-width="1" opacity="0.55"/>
+          <text class="svg-label" x="92" y="113" text-anchor="middle" fill="currentColor">S1 Hipótese</text>
+          <text class="svg-label-sm" x="92" y="127" text-anchor="middle" fill="currentColor" opacity="0.65">efeito + métrica</text>
+
+          <rect x="153" y="90" width="105" height="52" fill="none" stroke="currentColor" stroke-width="1" opacity="0.55"/>
+          <text class="svg-label" x="205" y="113" text-anchor="middle" fill="currentColor">S2 Instrum.</text>
+          <text class="svg-label-sm" x="205" y="127" text-anchor="middle" fill="currentColor" opacity="0.65">eventos existem?</text>
+
+          <rect x="266" y="90" width="105" height="52" fill="none" stroke="currentColor" stroke-width="1" opacity="0.55"/>
+          <text class="svg-label" x="318" y="113" text-anchor="middle" fill="currentColor">S3 Implem.</text>
+          <text class="svg-label-sm" x="318" y="127" text-anchor="middle" fill="currentColor" opacity="0.65">atrás de flag</text>
+
+          <rect x="379" y="90" width="91" height="52" fill="none" stroke="currentColor" stroke-width="1" opacity="0.55"/>
+          <text class="svg-label" x="424" y="113" text-anchor="middle" fill="currentColor">S4 Fila</text>
+          <text class="svg-label-sm" x="424" y="127" text-anchor="middle" fill="currentColor" opacity="0.65">liberação</text>
+
+          <rect x="484" y="90" width="100" height="52" fill="var(--accent)" opacity="0.10"/>
+          <rect x="484" y="90" width="100" height="52" fill="none" stroke="var(--accent)" stroke-width="1.2"/>
+          <text class="svg-label" x="534" y="113" text-anchor="middle" fill="var(--accent)">S5 Pré-MPR</text>
+          <text class="svg-label-sm" x="534" y="127" text-anchor="middle" fill="var(--accent)">anéis + dial</text>
+
+          <rect x="592" y="90" width="108" height="52" fill="var(--accent)" opacity="0.10"/>
+          <rect x="592" y="90" width="108" height="52" fill="none" stroke="var(--accent)" stroke-width="1.2"/>
+          <text class="svg-label" x="646" y="113" text-anchor="middle" fill="var(--accent)">S6 MPR</text>
+          <text class="svg-label-sm" x="646" y="127" text-anchor="middle" fill="var(--accent)">~7 dias</text>
+
+          <rect x="714" y="90" width="91" height="52" fill="none" stroke="currentColor" stroke-width="1" opacity="0.55"/>
+          <text class="svg-label" x="759" y="113" text-anchor="middle" fill="currentColor">S7 Leitura</text>
+          <text class="svg-label-sm" x="759" y="127" text-anchor="middle" fill="currentColor" opacity="0.65">scorecard</text>
+
+          <rect x="813" y="90" width="117" height="52" fill="var(--signal)" opacity="0.12"/>
+          <rect x="813" y="90" width="117" height="52" fill="none" stroke="var(--signal)" stroke-width="1.5"/>
+          <text class="svg-label" x="871" y="113" text-anchor="middle" fill="var(--signal)">S8 Decisão</text>
+          <text class="svg-label-sm" x="871" y="127" text-anchor="middle" fill="var(--signal)">relógio para aqui</text>
+        </g>
+
+        <g stroke="currentColor" stroke-width="1" opacity="0.5" fill="none">
+          <line x1="145" y1="116" x2="153" y2="116"/>
+          <line x1="258" y1="116" x2="266" y2="116"/>
+          <line x1="371" y1="116" x2="379" y2="116"/>
+          <line x1="470" y1="116" x2="484" y2="116"/>
+          <line x1="584" y1="116" x2="592" y2="116"/>
+          <line x1="700" y1="116" x2="714" y2="116"/>
+          <line x1="805" y1="116" x2="813" y2="116"/>
+        </g>
+
+        <g>
+          <polygon points="149,168 157,176 149,184 141,176" fill="var(--signal)"/>
+          <line x1="149" y1="142" x2="149" y2="168" stroke="var(--signal)" stroke-width="1" stroke-dasharray="2 2"/>
+          <text class="svg-label-sm" x="149" y="200" text-anchor="middle" fill="var(--signal)">GATE 1</text>
+          <text class="svg-label-sm" x="149" y="212" text-anchor="middle" fill="currentColor" opacity="0.7">validade · trava</text>
+
+          <polygon points="262,168 270,176 262,184 254,176" fill="var(--signal)"/>
+          <line x1="262" y1="142" x2="262" y2="168" stroke="var(--signal)" stroke-width="1" stroke-dasharray="2 2"/>
+          <text class="svg-label-sm" x="262" y="200" text-anchor="middle" fill="var(--signal)">GATE 2</text>
+          <text class="svg-label-sm" x="262" y="212" text-anchor="middle" fill="currentColor" opacity="0.7">eventos · trava</text>
+
+          <polygon points="375,168 383,176 375,184 367,176" fill="none" stroke="var(--warn)" stroke-width="1.5"/>
+          <line x1="375" y1="142" x2="375" y2="168" stroke="var(--warn)" stroke-width="1" stroke-dasharray="2 2"/>
+          <text class="svg-label-sm" x="375" y="200" text-anchor="middle" fill="var(--warn)">GATE 3</text>
+          <text class="svg-label-sm" x="375" y="212" text-anchor="middle" fill="currentColor" opacity="0.7">duração · avisa</text>
+
+          <polygon points="534,168 542,176 534,184 526,176" fill="var(--accent)"/>
+          <line x1="534" y1="142" x2="534" y2="168" stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 2"/>
+          <text class="svg-label-sm" x="534" y="200" text-anchor="middle" fill="var(--accent)">GUARD-RAIL NRT</text>
+          <text class="svg-label-sm" x="534" y="212" text-anchor="middle" fill="currentColor" opacity="0.7">desliga sozinho</text>
+
+          <polygon points="759,168 767,176 759,184 751,176" fill="var(--accent)"/>
+          <line x1="759" y1="142" x2="759" y2="168" stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 2"/>
+          <text class="svg-label-sm" x="759" y="200" text-anchor="middle" fill="var(--accent)">SRM</text>
+          <text class="svg-label-sm" x="759" y="212" text-anchor="middle" fill="currentColor" opacity="0.7">bloqueia scorecard</text>
+        </g>
+
+        <text class="svg-label-sm" x="871" y="168" text-anchor="middle" fill="currentColor" opacity="0.7">ramp a 100% e cleanup</text>
+        <text class="svg-label-sm" x="871" y="180" text-anchor="middle" fill="currentColor" opacity="0.7">seguem em paralelo</text>
+      </svg>
+    </div>
+    <figcaption>A decisão acontece no fim do MPR. Se o experimento só é dado como concluído ao chegar a 100%, o lead-time está medindo entrega junto com aprendizado — e o squad é cobrado por uma espera que não gera conhecimento.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <span class="eyebrow">O plano</span>
+  <div class="col stack">
+    <h2>Quatro fases, quatro critérios de saída</h2>
+    <p>Não se avança de fase sem cumprir o critério — o mesmo rigor que pedimos aos squads. A fase 1 não entrega feature de propósito: ela é o anel que contém o risco mais caro do programa, que é construir a coisa errada.</p>
+  </div>
+
+  <div class="prog">
+    <div class="prow">
+      <div class="when"><span class="p">Fase 1 · Anéis</span><span class="t">Semanas 1–4</span></div>
+      <div class="what">
+        <h3>Medir antes de expor</h3>
+        <ul>
+          <li>Timestamps por estágio (S1–S8) e registro do início <em>efetivo</em> da exposição</li>
+          <li>Painel de portfólio: p50 e p75 por estágio, por squad, por plataforma</li>
+          <li>Auditoria dos experimentos hoje no ar — MPR estourado, alocação assimétrica, SRM ignorado</li>
+          <li>Entrevistas com os 3 squads de maior gap, classificadas por causa</li>
+          <li>Piloto do gate de desenho com 2 squads voluntários</li>
+        </ul>
+      </div>
+      <div class="exit"><span class="x">Critério de saída</span><p>Lead-time decomposto e publicado. Três causas dominantes com evidência quantitativa. Gate rodando com passagem mediana abaixo de 30 minutos — se cria fila, não sai do piloto.</p></div>
+    </div>
+
+    <div class="prow key">
+      <div class="when"><span class="p">Fase 2 · MPR</span><span class="t">Semanas 5–13</span></div>
+      <div class="what">
+        <h3>Bater a meta do quarter</h3>
+        <ul>
+          <li>Alocação MPR como default, calculada sobre o tráfego disponível</li>
+          <li>Decisão registrável no fim do MPR, desacoplada do ramp a 100%</li>
+          <li>Dial automático de tráfego até a alocação-alvo</li>
+          <li>Verificação automática de instrumentação antes do start</li>
+          <li>Trava de compatibilidade entre unidade de randomização e de análise</li>
+          <li>Calculadora de duração no gate, com as saídas de sensibilidade</li>
+          <li>Scorecard com SRM bloqueante e leitura contra a regra pré-registrada</li>
+          <li>Notificações orientadas a ação pendente</li>
+        </ul>
+      </div>
+      <div class="exit"><span class="x">Critério de saída</span><p><strong>p50 ≤ 15 dias e p75 ≤ 21 dias</strong>, sobre janela móvel de 6 semanas. Nenhum guard-rail degradado. 60% dos experimentos iniciados com duração prevista dentro da meta.</p></div>
+    </div>
+
+    <div class="prow">
+      <div class="when"><span class="p">Fase 3 · Escala</span><span class="t">Q+1</span></div>
+      <div class="what">
+        <h3>Sustentar sem intervenção manual</h3>
+        <ul>
+          <li>Análise <em>triggered</em> — o maior multiplicador de sensibilidade disponível</li>
+          <li>Redução de variância (CUPED)</li>
+          <li>Catálogo de métricas com donos e aprovação disparada por impacto negativo</li>
+          <li>Inventário de parâmetros experimentáveis sem release</li>
+          <li>Onboarding self-service e mutirão de cleanup de código morto</li>
+        </ul>
+      </div>
+      <div class="exit"><span class="x">Critério de saída</span><p>100% dos squads ativos, lead-time sustentado sem apoio manual do time de plataforma, e <strong>throughput medido</strong> contra a linha de base da fase 1.</p></div>
+    </div>
+
+    <div class="prow">
+      <div class="when"><span class="p">Fase 4 · Holdout</span><span class="t">Q+2 em diante</span></div>
+      <div class="what">
+        <h3>Provar que o ganho agregado é real</h3>
+        <ul>
+          <li>Holdout global de portfólio — referência de 10% do tráfego</li>
+          <li>Experimentos reversos e replicação em um clique para resultados surpreendentes</li>
+          <li>Memória institucional buscável, incluindo os resultados negativos</li>
+        </ul>
+      </div>
+      <div class="exit"><span class="x">Critério de saída</span><p>Primeiro relatório de impacto cumulativo: a soma dos efeitos declarados comparada ao efeito medido pelo holdout. O custo é declarado — com 10% retidos, o MPR passa a ser 45/45.</p></div>
+    </div>
+  </div>
+
+  <div class="col stack">
+    <h3>Uma honestidade sobre o cronograma</h3>
+    <p>Um experimento iniciado na semana 11 não conclui dentro do quarter. A meta é medida sobre uma <strong>janela móvel de experimentos concluídos</strong>, e os últimos iniciados só entram no número no quarter seguinte. Dizer isso agora evita a conversa desconfortável na semana 13.</p>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">O que é promessa e o que é aposta</span>
+  <h2 class="col">Compromissos, apostas e guard-rails</h2>
+  <div class="two">
+    <div class="panel commitp">
+      <span class="eyebrow">Compromissos</span>
+      <ul>
+        <li>Lead-time decomposto e publicado <span>— Semana 4</span></li>
+        <li>p50 ≤ 15 dias e p75 ≤ 21 dias <span>— Semana 13</span></li>
+        <li>Nenhuma degradação de confiabilidade <span>— contínuo</span></li>
+      </ul>
+    </div>
+    <div class="panel betp">
+      <span class="eyebrow sig">Apostas, declaradas como apostas</span>
+      <ul>
+        <li>Throughput por squad quase dobra em Q+1 <span>— depende de o gargalo ser espera, não capacidade de construir</span></li>
+        <li>Redução adicional para ~10 dias em Q+1 <span>— depende do ganho real de triggering e CUPED</span></li>
+        <li>Impacto agregado verificável em Q+2 <span>— depende de aceitarmos o custo do holdout global</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Guard-rail do programa</th><th>Direção esperada</th></tr></thead>
+      <tbody>
+        <tr><td>Experimentos conclusivos — atingiram o poder declarado</td><td class="dir">sobe ou estável</td></tr>
+        <tr><td>Falha em SRM ou em teste de confiança</td><td class="dir">não sobe</td></tr>
+        <tr><td>Encerrados antes de 7 dias em MPR</td><td class="dir">não sobe</td></tr>
+        <tr><td>Métrica primária alterada depois do início</td><td class="dir">não sobe</td></tr>
+        <tr><td>Instrumentação incompleta detectada depois do início</td><td class="dir">cai</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="col"><strong>A frase:</strong> <em>“não vamos trocar confiabilidade por velocidade, e estes são os cinco números que provam isso todo mês.”</em> Dita antes de alguém perguntar, ela compra confiança para o resto da conversa.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Quanto vale</span>
+  <div class="col stack">
+    <h2>O teto é dobrar. O número real nós vamos medir.</h2>
+    <p>Pela Lei de Little, com o número de experimentos simultâneos constante, cortar o lead-time pela metade dobra o throughput. Esse é o teto — e ele deve ser apresentado como teto, com as três ressalvas ditas em voz alta:</p>
+    <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;">
+      <li>Só vale se o gargalo for <strong>espera</strong>, e não capacidade de construir a variante. A fase 1 responde qual dos dois é o caso.</li>
+      <li>Existe <strong>teto de tráfego</strong>: experimentos concorrentes na mesma superfície competem por amostra e podem interferir entre si.</li>
+      <li><strong>Volume não é aprendizado.</strong> A métrica correta é <em>experimentos conclusivos</em> — cinquenta testes underpowered ensinam menos que dez bem desenhados.</li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">O pedido</span>
+  <h2 class="col">Time, e uma decisão</h2>
+  <div class="ask">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Recurso</th><th>Fase 1</th><th>Fase 2</th><th>Por quê</th></tr></thead>
+        <tbody>
+          <tr><td>Engenharia de plataforma</td><td class="num">1</td><td class="num">1,5–2</td><td>os quatro primeiros itens são pequenos; os seguintes não</td></tr>
+          <tr><td>Data Science</td><td class="num">0,5</td><td class="num">0,5</td><td>trava de randomização, calculadora de duração, guard-rails</td></tr>
+          <tr><td>Design de produto</td><td class="num">0,2</td><td class="num">0,5</td><td>o gate e o scorecard são problemas de comunicação, não de backend</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ask-hero">
+      <span class="eyebrow">A decisão, e é a parte que importa</span>
+      <p style="margin-top:6px;">Um gate que qualquer liderança pode contornar por exceção não é um gate — é uma sugestão com etapa extra, e o pior dos dois mundos: custa tempo e não garante validade. <strong>O pedido é que as travas de validade não tenham bypass</strong> — métrica do catálogo, unidade de randomização compatível, instrumentação verificada — e que exceções passem pelo diretor.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Comunicação</span>
+  <div class="col stack">
+    <h2>Roteiro de dez minutos</h2>
+    <p>A ordem antecipa as objeções na sequência em que elas aparecem na cabeça de quem ouve.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>Slide</th><th>A frase-chave</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>A meta e o que ela vale</td><td>“15 dias não é meta de processo — é dobrar a taxa com que a empresa aprende.”</td></tr>
+        <tr><td class="num">2</td><td>O núcleo irredutível</td><td>“Um bom experimento leva de 9 a 11 dias, e comprimir isso quebra a medição.”</td></tr>
+        <tr><td class="num">3</td><td>Onde estão os outros 20</td><td>“Sobram 4 a 6 dias para tudo que é humano. É aí que vamos atuar.”</td></tr>
+        <tr><td class="num">4</td><td>A armadilha do escopo menor</td><td>“Sem compensar sensibilidade, experimentos menores ficam <strong>mais lentos</strong>.”</td></tr>
+        <tr><td class="num">5</td><td>As quatro fases do ramp</td><td>“São as fases que pedimos aos squads. São as mesmas do programa.”</td></tr>
+        <tr><td class="num">6</td><td>O programa em quatro fases</td><td>“Meta neste quarter. Escala no próximo. Prova do ganho depois.”</td></tr>
+        <tr><td class="num">7</td><td>O que entrego na semana 4</td><td>“Vocês veem a decomposição real dos 30 dias antes de eu pedir qualquer coisa grande.”</td></tr>
+        <tr><td class="num">8</td><td>Compromissos × apostas</td><td>“Isto eu me comprometo. Isto é aposta, e está declarado como aposta.”</td></tr>
+        <tr><td class="num">9</td><td>Os guard-rails</td><td>“Não vamos trocar confiabilidade por velocidade.”</td></tr>
+        <tr><td class="num">10</td><td>O pedido</td><td>“Time, e uma decisão sua: as travas de validade não têm bypass.”</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="col">O slide 4 estabelece autoridade técnica — é contraintuitivo, é verdadeiro, e é o tipo de coisa que só quem estudou o problema traz. O slide 9 estabelece confiança. O slide 10 transforma a conversa de aprovação de projeto em decisão de empresa.</p>
+</section>
+
+<footer>
+  Fundamentação: Kohavi, Tang &amp; Xu — <em>Trustworthy Online Controlled Experiments</em>, Parte IV, cap. 12 a 16.<br>
+  O framework SQR e as quatro fases do ramp são do cap. 15. Documento técnico completo e checklist de cruzamento com a plataforma em <span style="color:var(--muted)">docs/ravelocity/</span>.
+</footer>
+
+</div>
